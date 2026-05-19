@@ -472,16 +472,29 @@ async function finnhubQuote(symbol) {
 }
 
 async function finnhubCandles(symbol, days=365) {
-  try {
-    const to = Math.floor(Date.now()/1000);
-    const from = to - days*86400;
-    const r = await fetch(`https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(symbol)}&resolution=D&from=${from}&to=${to}&token=${API_KEY}`);
-    const d = await r.json();
-    if (d.s !== 'ok' || !d.t?.length) return null;
-    const map = {};
-    d.t.forEach((ts,i) => { map[new Date(ts*1000).toISOString().slice(0,10)] = d.c[i]; });
-    return { closes:d.c, timestamps:d.t, map };
-  } catch { return null; }
+  const tryFetch = async (url) => {
+    try {
+      const r = await fetch(url);
+      if (!r.ok) return null;
+      const d = await r.json();
+      if (d.s !== 'ok' || !d.t?.length) return null;
+      const map = {};
+      d.t.forEach((ts,i) => { map[new Date(ts*1000).toISOString().slice(0,10)] = d.c[i]; });
+      return { closes:d.c, timestamps:d.t, map };
+    } catch { return null; }
+  };
+  // Try count-based first (more reliable on free tier)
+  const count = Math.min(days, 365);
+  const url1 = `https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(symbol)}&resolution=D&count=${count}&token=${API_KEY}`;
+  let result = await tryFetch(url1);
+  if (result && result.closes.length > 10) return result;
+  // Fallback: from/to based
+  await new Promise(res => setTimeout(res, 500));
+  const to = Math.floor(Date.now()/1000);
+  const from = to - days*86400;
+  const url2 = `https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(symbol)}&resolution=D&from=${from}&to=${to}&token=${API_KEY}`;
+  result = await tryFetch(url2);
+  return result;
 }
 
 async function finnhubDividends(symbol) {
@@ -717,6 +730,8 @@ async function runScan() {
     return;
   }
 
+  // Stagger requests to avoid rate limit collision with portfolio loads
+  await new Promise(res => setTimeout(res, 300));
   const [quoteRes, candleRes, divRes, nameRes] = await Promise.allSettled([
     finnhubQuote(ticker),
     finnhubCandles(ticker, 365),
@@ -1295,6 +1310,8 @@ async function runScan() {
     return;
   }
 
+  // Stagger requests to avoid rate limit collision with portfolio loads
+  await new Promise(res => setTimeout(res, 300));
   const [quoteRes, candleRes, divRes, nameRes] = await Promise.allSettled([
     finnhubQuote(ticker),
     finnhubCandles(ticker, 365),
