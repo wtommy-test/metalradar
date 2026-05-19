@@ -728,6 +728,24 @@ async function runScan() {
   const candles = candleRes.status==='fulfilled'  ? candleRes.value  : null;
   const divs    = divRes.status==='fulfilled'     ? divRes.value     : [];
   const name    = nameRes.status==='fulfilled'    ? nameRes.value    : ticker;
+  // DEBUG
+  console.log('SCAN DEBUG', ticker, {
+    quoteOK: !!quote,
+    candlesOK: !!candles,
+    candleCount: candles ? candles.closes.length : 0,
+    divsFound: divs.length,
+    nameFound: name
+  });
+  if (candles) {
+    const nc = findNaturalCycles(candles.closes);
+    console.log('NATURAL CYCLES', nc ? {
+      avgCycle: nc.avgCycleDays,
+      consistency: nc.consistency,
+      peaks: nc.peaks.length,
+      troughs: nc.troughs.length,
+      avgGain: nc.avgGain
+    } : 'NULL - not enough data');
+  }
 
   if (!quote && !candles) {
     document.getElementById('scanner-area').innerHTML = `<div class="scanner-loading" style="color:var(--red)">Could not find data for "${ticker}". Check the ticker symbol and try again.</div>`;
@@ -1288,6 +1306,24 @@ async function runScan() {
   const candles = candleRes.status==='fulfilled'  ? candleRes.value  : null;
   const divs    = divRes.status==='fulfilled'     ? divRes.value     : [];
   const name    = nameRes.status==='fulfilled'    ? nameRes.value    : ticker;
+  // DEBUG
+  console.log('SCAN DEBUG', ticker, {
+    quoteOK: !!quote,
+    candlesOK: !!candles,
+    candleCount: candles ? candles.closes.length : 0,
+    divsFound: divs.length,
+    nameFound: name
+  });
+  if (candles) {
+    const nc = findNaturalCycles(candles.closes);
+    console.log('NATURAL CYCLES', nc ? {
+      avgCycle: nc.avgCycleDays,
+      consistency: nc.consistency,
+      peaks: nc.peaks.length,
+      troughs: nc.troughs.length,
+      avgGain: nc.avgGain
+    } : 'NULL - not enough data');
+  }
 
   if (!quote && !candles) {
     document.getElementById('scanner-area').innerHTML = `<div class="scanner-loading" style="color:var(--red)">Could not find data for "${ticker}". Check the ticker symbol and try again.</div>`;
