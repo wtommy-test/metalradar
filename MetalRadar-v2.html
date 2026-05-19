@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MetalRadar — Intelligence Suite</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080808; --surface: #0e0e0e; --surface2: #141414;
+  --border: #1e1e1e; --border2: #2a2a2a;
+  --text: #e8e8e8; --text2: #888; --text3: #444;
+  --gold: #D4AF37; --silver: #C0C0C0; --btc: #F7931A;
+  --green: #4ade80; --red: #f87171; --amber: #fbbf24;
+  --orange: #fb923c; --blue: #60a5fa;
+  --mono: 'Share Tech Mono', monospace;
+  --serif: 'Crimson Pro', Georgia, serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--serif); min-height: 100vh; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0.35;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+/* ── SETUP ── */
+#setup-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:40px 20px; text-align:center; position:relative; z-index:1; }
+.setup-icon { font-size:52px; margin-bottom:16px; animation:pulse 3s ease-in-out infinite; }
+.setup-title { font-family:var(--mono); font-size:18px; letter-spacing:0.25em; margin-bottom:6px; }
+.setup-sub { font-style:italic; font-size:14px; color:var(--text3); margin-bottom:32px; }
+.setup-box { background:var(--surface); border:1px solid var(--border2); border-radius:8px; padding:28px; width:100%; max-width:380px; }
+.setup-label { font-family:var(--mono); font-size:10px; letter-spacing:0.15em; color:var(--text3); text-align:left; margin-bottom:8px; text-transform:uppercase; }
+.setup-input { width:100%; background:var(--bg); border:1px solid var(--border2); color:var(--text); font-family:var(--mono); font-size:13px; padding:12px 14px; border-radius:5px; outline:none; margin-bottom:16px; transition:border-color 0.2s; }
+.setup-input:focus { border-color:var(--gold); }
+.setup-btn { width:100%; background:var(--gold); border:none; color:#000; font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:0.2em; padding:12px; border-radius:4px; cursor:pointer; transition:opacity 0.2s; }
+.setup-btn:hover { opacity:0.85; }
+.setup-note { font-size:11px; color:var(--text3); margin-top:14px; font-style:italic; }
+
+/* ── MAIN APP ── */
+#app { display:none; position:relative; z-index:1; padding-bottom:48px; }
+
+/* ── HEADER ── */
+.header { display:flex; justify-content:space-between; align-items:center; padding:16px 20px 12px; border-bottom:1px solid var(--border); background:linear-gradient(180deg,#111 0%,var(--bg) 100%); position:sticky; top:0; z-index:100; backdrop-filter:blur(10px); }
+.header-title { font-family:var(--mono); font-size:13px; letter-spacing:0.22em; }
+.header-sub { font-family:var(--mono); font-size:9px; color:var(--text3); letter-spacing:0.12em; margin-top:2px; }
+.header-right { display:flex; align-items:center; gap:10px; }
+.last-update { font-family:var(--mono); font-size:9px; color:var(--text3); }
+.icon-btn { background:transparent; border:1px solid var(--border2); color:var(--text2); font-family:var(--mono); font-size:10px; letter-spacing:0.08em; padding:6px 12px; border-radius:4px; cursor:pointer; transition:all 0.2s; }
+.icon-btn:hover { border-color:var(--gold); color:var(--gold); }
+.icon-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+/* ── TAB NAV ── */
+.tab-nav { display:flex; border-bottom:1px solid var(--border); background:var(--bg); position:sticky; top:57px; z-index:99; }
+.tab-btn { flex:1; font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; padding:11px 8px; background:transparent; border:none; color:var(--text3); cursor:pointer; border-bottom:2px solid transparent; transition:all 0.2s; }
+.tab-btn.active { color:var(--gold); border-bottom-color:var(--gold); }
+.tab-btn:hover:not(.active) { color:var(--text2); }
+.tab-content { display:none; }
+.tab-content.active { display:block; animation:fadeUp 0.3s ease both; }
+
+/* ── SHARED COMPONENTS ── */
+.section-wrap { margin:16px 16px 0; }
+.panel { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:14px 16px; }
+.section-label { font-family:var(--mono); font-size:9px; letter-spacing:0.22em; color:var(--text3); text-transform:uppercase; margin-bottom:12px; }
+.skel { background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:3px; }
+
+/* ── MACRO PANEL ── */
+.macro-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.macro-item { background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:9px 11px; }
+.macro-item-label { font-family:var(--mono); font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:3px; }
+.macro-item-value { font-family:var(--mono); font-size:12px; font-weight:700; margin-bottom:3px; }
+.macro-item-desc { font-size:10px; color:var(--text3); font-style:italic; }
+
+/* ── CARDS ── */
+.cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; padding:14px 16px 0; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:16px; }
+.card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+.card-left { display:flex; align-items:center; gap:10px; }
+.icon-badge { width:36px; height:36px; border:1px solid; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:17px; background:rgba(255,255,255,0.02); flex-shrink:0; }
+.card-ticker { font-family:var(--mono); font-size:16px; font-weight:700; letter-spacing:0.08em; }
+.card-name { font-size:11px; color:var(--text3); margin-top:2px; font-style:italic; }
+.trend-badge { font-family:var(--mono); font-size:9px; font-weight:700; border-radius:3px; padding:2px 6px; letter-spacing:0.1em; margin-left:8px; }
+.trend-bull { color:var(--green); background:rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.25); }
+.trend-bear { color:var(--red); background:rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.25); }
+.card-price { font-family:var(--mono); font-size:21px; font-weight:700; text-align:right; }
+.card-change { font-family:var(--mono); font-size:12px; font-weight:700; text-align:right; margin-top:2px; }
+.up { color:var(--green); } .down { color:var(--red); } .neutral { color:var(--text2); }
+.platforms { display:flex; gap:5px; margin-bottom:10px; flex-wrap:wrap; }
+.platform-badge { font-family:var(--mono); font-size:9px; background:var(--surface2); border:1px solid var(--border2); border-radius:3px; padding:2px 7px; color:var(--text3); letter-spacing:0.06em; text-transform:uppercase; }
+.sparkline-wrap { margin-bottom:10px; }
+.sparkline-ma { display:flex; gap:14px; margin-top:4px; }
+.ma-label { font-family:var(--mono); font-size:9px; color:var(--text3); }
+.hlp-row { display:flex; gap:16px; margin-bottom:10px; }
+.hlp-label { font-family:var(--mono); font-size:9px; color:var(--text3); text-transform:uppercase; margin-bottom:2px; }
+.hlp-value { font-family:var(--mono); font-size:12px; }
+.div-banner { border:1px solid var(--border); border-radius:4px; padding:7px 10px; margin-bottom:8px; display:flex; align-items:center; flex-wrap:wrap; gap:5px; font-family:var(--mono); font-size:10px; }
+.div-banner.urgent { border-color:var(--amber); background:rgba(251,191,36,0.06); }
+.roc-note { display:flex; align-items:flex-start; gap:6px; margin-bottom:10px; background:rgba(251,146,60,0.04); border:1px solid rgba(251,146,60,0.15); border-radius:4px; padding:7px 10px; font-size:10px; color:var(--text3); }
+.mara-panel { background:rgba(247,147,26,0.04); border:1px solid rgba(247,147,26,0.15); border-radius:4px; padding:10px 12px; margin-bottom:8px; }
+.mara-panel-label { font-family:var(--mono); font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; }
+.mara-btc-row { display:flex; gap:18px; align-items:center; }
+.mara-btc-sublabel { font-size:10px; color:var(--text3); margin-bottom:2px; font-style:italic; }
+.mara-btc-val { font-family:var(--mono); font-size:14px; font-weight:700; color:var(--btc); }
+.mara-btc-note { font-size:10px; color:var(--text3); max-width:130px; font-style:italic; }
+.expand-btn { background:transparent; border:1px solid var(--border); color:var(--text3); font-family:var(--mono); font-size:10px; letter-spacing:0.08em; padding:6px 10px; border-radius:3px; cursor:pointer; width:100%; margin-top:6px; transition:all 0.2s; }
+.expand-btn:hover { border-color:var(--border2); color:var(--text2); }
+.strategy-notes { margin-top:10px; background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:12px 14px; display:none; }
+.strategy-notes.open { display:block; animation:fadeUp 0.2s ease both; }
+.note-p { font-size:12px; color:#666; margin-bottom:9px; line-height:1.55; }
+.note-p:last-child { margin-bottom:0; }
+
+/* ── RHYTHM PANEL (shared) ── */
+.rhythm-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
+.rhythm-stat { background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:10px 8px; text-align:center; }
+.rhythm-stat-label { font-family:var(--mono); font-size:8px; color:var(--text3); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:5px; }
+.rhythm-stat-value { font-family:var(--mono); font-size:14px; font-weight:700; }
+.rhythm-stat-sub { font-size:9px; color:var(--text3); margin-top:3px; font-style:italic; }
+.rhythm-window { border-radius:5px; padding:12px 14px; margin-bottom:14px; border:1px solid; }
+.rhythm-window.pre-div { background:rgba(251,191,36,0.06); border-color:rgba(251,191,36,0.3); }
+.rhythm-window.post-div { background:rgba(248,113,113,0.06); border-color:rgba(248,113,113,0.3); }
+.rhythm-window.neutral-win { background:rgba(255,255,255,0.02); border-color:var(--border); }
+.rhythm-window-label { font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; margin-bottom:4px; }
+.rhythm-window-desc { font-size:12px; color:var(--text2); font-style:italic; }
+.rhythm-chart-label { font-family:var(--mono); font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; }
+.cycle-table { width:100%; border-collapse:collapse; margin-top:4px; }
+.cycle-table th { font-family:var(--mono); font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); }
+.cycle-table td { font-family:var(--mono); font-size:11px; padding:7px 8px; border-bottom:1px solid var(--border); color:var(--text2); }
+.cycle-table tr:last-child td { border-bottom:none; }
+.cycle-table td.pos { color:var(--green); } .cycle-table td.neg { color:var(--red); }
+.rhythm-insight { background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:12px 14px; margin-top:12px; }
+.rhythm-insight-label { font-family:var(--mono); font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px; }
+.rhythm-insight p { font-size:12px; color:var(--text3); line-height:1.6; font-style:italic; }
+.rhythm-insight p+p { margin-top:6px; }
+.insight-hl { font-style:normal; font-weight:600; }
+
+/* ── SCANNER TAB ── */
+.scanner-search-wrap { display:flex; gap:8px; margin-bottom:16px; }
+.scanner-input { flex:1; background:var(--bg); border:1px solid var(--border2); color:var(--text); font-family:var(--mono); font-size:14px; padding:12px 14px; border-radius:5px; outline:none; text-transform:uppercase; letter-spacing:0.1em; transition:border-color 0.2s; }
+.scanner-input:focus { border-color:var(--gold); }
+.scanner-input::placeholder { color:var(--text3); font-size:11px; text-transform:none; letter-spacing:0.05em; }
+.scan-btn { background:var(--gold); border:none; color:#000; font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.15em; padding:12px 18px; border-radius:5px; cursor:pointer; white-space:nowrap; transition:opacity 0.2s; }
+.scan-btn:hover { opacity:0.85; }
+.scan-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+/* FAVORITES */
+.fav-section { margin-bottom:16px; }
+.fav-label { font-family:var(--mono); font-size:9px; letter-spacing:0.18em; color:var(--text3); text-transform:uppercase; margin-bottom:8px; }
+.fav-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.fav-chip { display:flex; align-items:center; gap:5px; background:var(--surface2); border:1px solid var(--border2); border-radius:20px; padding:4px 10px 4px 12px; cursor:pointer; transition:all 0.2s; }
+.fav-chip:hover { border-color:var(--gold); }
+.fav-chip-text { font-family:var(--mono); font-size:11px; color:var(--text2); letter-spacing:0.08em; }
+.fav-chip-remove { font-size:13px; color:var(--text3); line-height:1; transition:color 0.2s; }
+.fav-chip-remove:hover { color:var(--red); }
+.fav-add-hint { font-size:11px; color:var(--text3); font-style:italic; }
+
+/* SCANNER RESULT */
+.scanner-result { animation:fadeUp 0.3s ease both; }
+.result-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; }
+.result-ticker { font-family:var(--mono); font-size:22px; font-weight:700; letter-spacing:0.1em; }
+.result-name { font-size:13px; color:var(--text3); font-style:italic; margin-top:3px; }
+.result-price-wrap { text-align:right; }
+.result-price { font-family:var(--mono); font-size:24px; font-weight:700; }
+.result-change { font-family:var(--mono); font-size:13px; font-weight:700; margin-top:2px; }
+.result-actions { display:flex; gap:8px; margin-bottom:16px; }
+.save-fav-btn { background:transparent; border:1px solid var(--border2); color:var(--text3); font-family:var(--mono); font-size:10px; letter-spacing:0.1em; padding:7px 14px; border-radius:4px; cursor:pointer; transition:all 0.2s; }
+.save-fav-btn:hover { border-color:var(--gold); color:var(--gold); }
+.save-fav-btn.saved { border-color:var(--green); color:var(--green); }
+
+/* WAVE SCORE */
+.wave-score-wrap { display:flex; align-items:center; gap:14px; background:var(--bg); border:1px solid var(--border); border-radius:5px; padding:12px 14px; margin-bottom:14px; }
+.wave-score-num { font-family:var(--mono); font-size:36px; font-weight:700; line-height:1; }
+.wave-score-label { font-family:var(--mono); font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:4px; }
+.wave-score-desc { font-size:12px; color:var(--text2); font-style:italic; }
+.wave-bar-wrap { flex:1; }
+.wave-bar-track { background:var(--border); border-radius:10px; height:6px; width:100%; margin-top:8px; overflow:hidden; }
+.wave-bar-fill { height:100%; border-radius:10px; transition:width 0.8s ease; }
+
+/* ENTRY/EXIT SIGNAL */
+.signal-box { border:1px solid var(--border); border-radius:5px; padding:12px 14px; margin-bottom:14px; }
+.signal-box.entry { background:rgba(74,222,128,0.05); border-color:rgba(74,222,128,0.3); }
+.signal-box.exit { background:rgba(248,113,113,0.05); border-color:rgba(248,113,113,0.3); }
+.signal-box.watch { background:rgba(251,191,36,0.05); border-color:rgba(251,191,36,0.3); }
+.signal-box.neutral { background:rgba(255,255,255,0.02); border-color:var(--border); }
+.signal-label { font-family:var(--mono); font-size:10px; letter-spacing:0.14em; text-transform:uppercase; margin-bottom:5px; }
+.signal-desc { font-size:12px; color:var(--text2); line-height:1.55; }
+
+.scanner-empty { text-align:center; padding:48px 20px; }
+.scanner-empty-icon { font-size:40px; margin-bottom:12px; opacity:0.3; }
+.scanner-empty-text { font-family:var(--mono); font-size:11px; color:var(--text3); letter-spacing:0.1em; }
+.scanner-loading { text-align:center; padding:40px; font-family:var(--mono); font-size:11px; color:var(--text3); letter-spacing:0.1em; }
+.spin { display:inline-block; animation:spin 1s linear infinite; }
+
+/* DISCLAIMER */
+.disclaimer { font-size:10px; color:var(--text3); text-align:center; padding:22px 20px 0; border-top:1px solid var(--border); margin-top:22px; line-height:1.7; font-style:italic; }
+
+@media(max-width:480px){
+  .macro-grid { grid-template-columns:1fr; }
+  .cards-grid { grid-template-columns:1fr; padding:12px 12px 0; }
+  .section-wrap { margin:12px 12px 0; }
+  .rhythm-stats { grid-template-columns:repeat(2,1fr); }
+  .header { padding:12px 14px; }
+}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setup-screen">
+  <div class="setup-icon">◈</div>
+  <div class="setup-title">METALRADAR</div>
+  <div class="setup-sub">Intelligence Suite — Portfolio &amp; Rhythm Scanner</div>
+  <div class="setup-box">
+    <div class="setup-label">Finnhub API Key</div>
+    <input class="setup-input" type="password" id="api-key-input" placeholder="Enter your Finnhub API key" />
+    <button class="setup-btn" onclick="saveKey()">CONNECT</button>
+    <div class="setup-note">Stored locally — never transmitted anywhere else</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <div class="header-title">METALRADAR</div>
+      <div class="header-sub">INTELLIGENCE SUITE</div>
+    </div>
+    <div class="header-right">
+      <div class="last-update" id="last-update"></div>
+      <button class="icon-btn" id="refresh-btn" onclick="refreshPortfolio()">⟳ REFRESH</button>
+    </div>
+  </div>
+
+  <!-- TAB NAV -->
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('portfolio',this)">◈ Portfolio</button>
+    <button class="tab-btn" onclick="switchTab('scanner',this)">⟳ Rhythm Scanner</button>
+  </div>
+
+  <!-- ══ PORTFOLIO TAB ══ -->
+  <div class="tab-content active" id="tab-portfolio">
+
+    <div class="section-wrap">
+      <div class="panel">
+        <div class="section-label">Macro Environment</div>
+        <div class="macro-grid" id="macro-grid"></div>
+      </div>
+    </div>
+
+    <div class="cards-grid" id="cards-grid"></div>
+
+    <!-- RHYTHM TRACKER -->
+    <div class="section-wrap">
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div>
+            <div class="section-label" style="margin-bottom:2px">Dividend Rhythm Tracker</div>
+            <div style="font-size:11px;color:var(--text3);font-style:italic">Pre &amp; post ex-date pattern — 12 months of history</div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="icon-btn rhythm-etf-tab active-etf" onclick="switchRhythm('KSLV',this)" style="font-size:10px;padding:5px 12px">KSLV</button>
+            <button class="icon-btn rhythm-etf-tab" onclick="switchRhythm('KGLD',this)" style="font-size:10px;padding:5px 12px">KGLD</button>
+          </div>
+        </div>
+        <div id="rhythm-loading" style="text-align:center;padding:32px;font-family:var(--mono);font-size:11px;color:var(--text3);letter-spacing:0.1em">⟳ LOADING RHYTHM DATA…</div>
+        <div id="rhythm-content" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      ⚠ For informational purposes only. Not financial advice. Always verify dividend dates and distribution composition before trading.<br>
+      Past performance does not guarantee future results. Position sizing and risk management are your responsibility.
+    </div>
+  </div>
+
+  <!-- ══ SCANNER TAB ══ -->
+  <div class="tab-content" id="tab-scanner">
+    <div class="section-wrap">
+
+      <!-- SEARCH -->
+      <div class="scanner-search-wrap">
+        <input class="scanner-input" type="text" id="scanner-input" placeholder="Enter any ticker — AAPL, MARA, JEPI…" maxlength="10" />
+        <button class="scan-btn" id="scan-btn" onclick="runScan()">SCAN</button>
+      </div>
+
+      <!-- FAVORITES -->
+      <div class="fav-section" id="fav-section">
+        <div class="fav-label">Saved Favorites</div>
+        <div class="fav-chips" id="fav-chips"></div>
+      </div>
+
+      <!-- RESULT AREA -->
+      <div id="scanner-area">
+        <div class="scanner-empty">
+          <div class="scanner-empty-icon">⟳</div>
+          <div class="scanner-empty-text">ENTER A TICKER TO SCAN FOR RHYTHM</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="disclaimer" style="margin-top:16px">
+      ⚠ Rhythm patterns are based on historical price behavior only. Not predictive. Not financial advice.<br>
+      Always apply your own judgment and risk management before any trade.
+    </div>
+  </div>
+
+</div><!-- end #app -->
+
+<script>
+// ════════════════════════════════════════════════════════
+// GLOBALS
+// ════════════════════════════════════════════════════════
+let API_KEY = localStorage.getItem('finnhub_api_key') || '';
+let quoteData = {}, candleData = {}, btcQuote = null;
+let rhythmCache = {}, rhythmTicker = 'KSLV';
+let scanCache = {};
+let favorites = JSON.parse(localStorage.getItem('mr_favorites') || '[]');
+
+const WINDOW_DAYS = 7;
+
+const PORTFOLIO_ASSETS = [
+  { ticker:'KSLV', name:'KraneShares Silver', type:'metals-etf', platforms:['Robinhood','Coinbase'], color:'#C0C0C0', exDiv:'2026-05-20', payDate:'2026-05-21', estDividend:0.75, icon:'⬡',
+    notes:[{hl:'#fbbf24',label:'Dividend Capture Risk',text:'Share price typically drops ~dividend amount after ex-date. Volatile markets can move far more than the payout.'},{hl:'#fb923c',label:'ROC Warning',text:'Distributions may return your own capital — not pure income. Verify before sizing.'},{hl:'#60a5fa',label:'Silver Nature',text:'Dual precious/industrial metal. Reacts to geopolitical safe-haven demand AND manufacturing/tech sentiment.'}]},
+  { ticker:'KGLD', name:'KraneShares Gold', type:'metals-etf', platforms:['Robinhood','Coinbase'], color:'#D4AF37', exDiv:null, payDate:null, estDividend:null, icon:'◈',
+    notes:[{hl:'#D4AF37',label:'Gold ETF',text:'Pure safe-haven play. Sensitive to Treasury yield direction and USD strength. Weaker dollar is a tailwind.'},{hl:'#fb923c',label:'ROC Warning',text:'Same covered-call structure as KSLV — verify distribution composition.'},{hl:'#60a5fa',label:'Key Watch',text:'Monitor 10-year Treasury yield. Rising yields create headwinds for gold even during geopolitical uncertainty.'}]},
+  { ticker:'MARA', name:'MARA Holdings', type:'crypto-miner', platforms:['Coinbase'], color:'#F7931A', exDiv:null, payDate:null, estDividend:null, icon:'₿',
+    notes:[{hl:'#F7931A',label:'BTC Miner',text:'MARA is a leveraged Bitcoin play — amplifies BTC moves in both directions. Not a metals position.'},{hl:'#4ade80',label:'Bullish Signal',text:'BTC rising + stable hash rate + risk-on sentiment = MARA momentum window.'},{hl:'#f87171',label:'Risk',text:'MARA carries equity risk on top of BTC volatility. Earnings, dilution, and costs all factor in.'}]},
+];
+
+const MACRO_SIGNALS = [
+  { label:'Geopolitical Pressure', value:'ELEVATED', color:'#f87171', desc:'Middle East tensions supporting metals' },
+  { label:'Treasury Yield Pressure', value:'HIGH', color:'#fb923c', desc:'Rising yields creating headwinds for gold/silver' },
+  { label:'USD Strength', value:'WEAKENING', color:'#4ade80', desc:'Soft dollar supporting commodity prices' },
+  { label:'Silver Volatility', value:'HIGH', color:'#fb923c', desc:'Dual precious/industrial nature — highly reactive' },
+  { label:'BTC Sentiment', value:'—', color:'#444', desc:'Drives MARA momentum — loading…', id:'btc-macro' },
+];
+
+const RHYTHM_ETF_DIVS = {
+  KSLV: ['2026-05-20','2026-04-22','2026-03-20','2026-02-20','2026-01-22','2025-12-20','2025-11-20','2025-10-22'],
+  KGLD: ['2026-04-22','2026-03-20','2026-02-20','2026-01-22','2025-12-20','2025-11-20','2025-10-22'],
+};
+
+// ════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  if (API_KEY) showApp();
+  document.getElementById('api-key-input').addEventListener('keydown', e => { if(e.key==='Enter') saveKey(); });
+  document.getElementById('scanner-input').addEventListener('keydown', e => { if(e.key==='Enter') runScan(); });
+});
+
+function saveKey() {
+  const k = document.getElementById('api-key-input').value.trim();
+  if (!k) return;
+  API_KEY = k;
+  localStorage.setItem('finnhub_api_key', k);
+  showApp();
+}
+
+function showApp() {
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  buildMacro();
+  buildCards();
+  refreshPortfolio();
+  loadRhythm('KSLV');
+  renderFavorites();
+}
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ════════════════════════════════════════════════════════
+// FINNHUB API
+// ════════════════════════════════════════════════════════
+async function finnhubQuote(symbol) {
+  try {
+    const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${API_KEY}`);
+    const d = await r.json();
+    if (!d.c || d.c === 0) return null;
+    return { price:d.c, change:d.d, changePct:d.dp, high:d.h, low:d.l, prev:d.pc };
+  } catch { return null; }
+}
+
+async function finnhubCandles(symbol, days=365) {
+  try {
+    const to = Math.floor(Date.now()/1000);
+    const from = to - days*86400;
+    const r = await fetch(`https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(symbol)}&resolution=D&from=${from}&to=${to}&token=${API_KEY}`);
+    const d = await r.json();
+    if (d.s !== 'ok' || !d.t?.length) return null;
+    const map = {};
+    d.t.forEach((ts,i) => { map[new Date(ts*1000).toISOString().slice(0,10)] = d.c[i]; });
+    return { closes:d.c, timestamps:d.t, map };
+  } catch { return null; }
+}
+
+async function finnhubDividends(symbol) {
+  try {
+    const to = new Date().toISOString().slice(0,10);
+    const from = new Date(Date.now()-400*86400000).toISOString().slice(0,10);
+    const r = await fetch(`https://finnhub.io/api/v1/stock/dividend?symbol=${encodeURIComponent(symbol)}&from=${from}&to=${to}&token=${API_KEY}`);
+    const d = await r.json();
+    if (!Array.isArray(d)||!d.length) return [];
+    return d.map(x=>x.exDate||x.date).filter(Boolean).sort().reverse();
+  } catch { return []; }
+}
+
+async function finnhubProfile(symbol) {
+  try {
+    const r = await fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${encodeURIComponent(symbol)}&token=${API_KEY}`);
+    const d = await r.json();
+    return d?.name || symbol;
+  } catch { return symbol; }
+}
+
+// ════════════════════════════════════════════════════════
+// PORTFOLIO TAB
+// ════════════════════════════════════════════════════════
+async function refreshPortfolio() {
+  const btn = document.getElementById('refresh-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spin">⟳</span> LOADING';
+  const results = await Promise.allSettled([
+    ...PORTFOLIO_ASSETS.map(a => finnhubQuote(a.ticker)),
+    ...PORTFOLIO_ASSETS.map(a => finnhubCandles(a.ticker, 30)),
+    finnhubQuote('BINANCE:BTCUSDT'),
+  ]);
+  const n = PORTFOLIO_ASSETS.length;
+  PORTFOLIO_ASSETS.forEach((a,i) => {
+    if (results[i].status==='fulfilled'&&results[i].value) quoteData[a.ticker]=results[i].value;
+    if (results[i+n].status==='fulfilled'&&results[i+n].value) candleData[a.ticker]=results[i+n].value;
+  });
+  btcQuote = results[n*2].status==='fulfilled' ? results[n*2].value : null;
+  updateMacroBTC();
+  PORTFOLIO_ASSETS.forEach(a => updateCard(a));
+  document.getElementById('last-update').textContent = 'Updated '+new Date().toLocaleTimeString();
+  btn.disabled=false; btn.innerHTML='⟳ REFRESH';
+}
+
+function buildMacro() {
+  document.getElementById('macro-grid').innerHTML = MACRO_SIGNALS.map(s=>`
+    <div class="macro-item" ${s.id?`id="macro-${s.id}"`:''}>
+      <div class="macro-item-label">${s.label}</div>
+      <div class="macro-item-value" style="color:${s.color}">${s.value}</div>
+      <div class="macro-item-desc">${s.desc}</div>
+    </div>`).join('');
+}
+
+function updateMacroBTC() {
+  const el = document.getElementById('macro-btc-macro');
+  if (!el||!btcQuote) return;
+  const up = btcQuote.changePct >= 0;
+  el.querySelector('.macro-item-value').textContent = up ? 'RISK-ON' : 'RISK-OFF';
+  el.querySelector('.macro-item-value').style.color = up ? 'var(--green)' : 'var(--red)';
+  el.querySelector('.macro-item-desc').textContent = `BTC ${up?'+':''}${fmt(btcQuote.changePct,2)}% — drives MARA momentum`;
+}
+
+function buildCards() {
+  document.getElementById('cards-grid').innerHTML = PORTFOLIO_ASSETS.map(a=>`
+    <div class="card" id="card-${a.ticker}" style="border-color:${a.color}33">
+      <div class="card-header">
+        <div class="card-left">
+          <div class="icon-badge" style="color:${a.color};border-color:${a.color}55">${a.icon}</div>
+          <div>
+            <div><span class="card-ticker">${a.ticker}</span><span class="trend-badge" id="trend-${a.ticker}" style="display:none"></span></div>
+            <div class="card-name">${a.name}</div>
+          </div>
+        </div>
+        <div>
+          <div class="card-price" id="price-${a.ticker}"><div class="skel" style="width:80px;height:22px"></div></div>
+          <div class="card-change" id="change-${a.ticker}"></div>
+        </div>
+      </div>
+      <div class="platforms">${a.platforms.map(p=>`<span class="platform-badge">${p}</span>`).join('')}</div>
+      <div class="sparkline-wrap">
+        <svg id="spark-${a.ticker}" width="100%" height="40" viewBox="0 0 300 40" preserveAspectRatio="none"></svg>
+        <div class="sparkline-ma" id="ma-${a.ticker}"></div>
+      </div>
+      <div class="hlp-row" id="hlp-${a.ticker}" style="display:none">
+        <div><div class="hlp-label">Day High</div><div class="hlp-value up" id="high-${a.ticker}">—</div></div>
+        <div><div class="hlp-label">Day Low</div><div class="hlp-value down" id="low-${a.ticker}">—</div></div>
+        <div><div class="hlp-label">Prev Close</div><div class="hlp-value neutral" id="prev-${a.ticker}">—</div></div>
+      </div>
+      ${a.type==='metals-etf' ? buildDivBanner(a) : ''}
+      ${a.type==='metals-etf' ? `<div class="roc-note"><span style="color:var(--orange)">◈</span><span>Distribution may include <span style="color:var(--orange)">Return of Capital (ROC)</span> — not pure income. Verify before sizing.</span></div>` : ''}
+      ${a.type==='crypto-miner' ? `<div class="mara-panel"><div class="mara-panel-label">BTC Correlation</div><div class="mara-btc-row"><div><div class="mara-btc-sublabel">BTC Price</div><div class="mara-btc-val" id="btc-price">—</div></div><div><div class="mara-btc-sublabel">24h Change</div><div id="btc-change" style="font-family:var(--mono);font-size:13px;font-weight:700">—</div></div><div class="mara-btc-note">MARA tracks BTC sentiment — watch momentum for entry signals.</div></div></div>` : ''}
+      <button class="expand-btn" onclick="toggleNotes('${a.ticker}')">▼ Strategy Notes</button>
+      <div class="strategy-notes" id="notes-${a.ticker}">
+        ${a.notes.map(n=>`<p class="note-p"><span style="color:${n.hl};font-weight:600">${n.label}:</span> ${n.text}</p>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function buildDivBanner(a) {
+  if (!a.exDiv) return '';
+  const days = daysUntil(a.exDiv);
+  const urgent = days!==null && days<=3;
+  return `<div class="div-banner ${urgent?'urgent':''}">
+    <span style="color:${urgent?'var(--amber)':'var(--text3)'}">${urgent?`⚠ EX-DIV IN ${days} DAY${days!==1?'S':''}`:`Ex-Div: ${a.exDiv}`}</span>
+    ${a.estDividend?`<span style="color:var(--green)">~$${a.estDividend.toFixed(2)}/share</span>`:''}
+    ${a.payDate?`<span style="color:var(--text3)">Pay: ${a.payDate}</span>`:''}
+  </div>`;
+}
+
+function updateCard(asset) {
+  const q = quoteData[asset.ticker];
+  const c = candleData[asset.ticker];
+  const priceEl = document.getElementById(`price-${asset.ticker}`);
+  if (q) {
+    priceEl.textContent = fmtUSD(q.price);
+    const changeEl = document.getElementById(`change-${asset.ticker}`);
+    changeEl.textContent = `${fmtPct(q.changePct)} (${fmtUSD(Math.abs(q.change))})`;
+    changeEl.className = `card-change ${q.changePct>=0?'up':'down'}`;
+    const hlp = document.getElementById(`hlp-${asset.ticker}`);
+    hlp.style.display = 'flex';
+    document.getElementById(`high-${asset.ticker}`).textContent = fmtUSD(q.high);
+    document.getElementById(`low-${asset.ticker}`).textContent = fmtUSD(q.low);
+    document.getElementById(`prev-${asset.ticker}`).textContent = fmtUSD(q.prev);
+  } else { priceEl.textContent='—'; }
+  if (c?.closes?.length>1) {
+    drawSparkline(`spark-${asset.ticker}`, c.closes);
+    const ma7=maSimple(c.closes,7), ma20=maSimple(c.closes,20);
+    document.getElementById(`ma-${asset.ticker}`).innerHTML=`
+      ${ma7?`<span class="ma-label">MA7 <span style="color:#a3e635;font-family:var(--mono)">${fmtUSD(ma7)}</span></span>`:''}
+      ${ma20?`<span class="ma-label">MA20 <span style="color:#60a5fa;font-family:var(--mono)">${fmtUSD(ma20)}</span></span>`:''}`;
+    if (ma7&&ma20) {
+      const badge = document.getElementById(`trend-${asset.ticker}`);
+      const bull = ma7>ma20;
+      badge.textContent = bull?'BULLISH':'BEARISH';
+      badge.className = `trend-badge ${bull?'trend-bull':'trend-bear'}`;
+      badge.style.display = 'inline';
+    }
+  }
+  if (asset.type==='crypto-miner'&&btcQuote) {
+    const btcPriceEl=document.getElementById('btc-price');
+    const btcChangeEl=document.getElementById('btc-change');
+    if(btcPriceEl) btcPriceEl.textContent=fmtUSD(btcQuote.price);
+    if(btcChangeEl){ btcChangeEl.textContent=fmtPct(btcQuote.changePct); btcChangeEl.style.color=btcQuote.changePct>=0?'var(--green)':'var(--red)'; }
+  }
+}
+
+function toggleNotes(ticker) {
+  const notes=document.getElementById(`notes-${ticker}`);
+  const open=notes.classList.toggle('open');
+  notes.previousElementSibling.textContent=open?'▲ Close Notes':'▼ Strategy Notes';
+}
+
+// ════════════════════════════════════════════════════════
+// RHYTHM TRACKER (Portfolio tab)
+// ════════════════════════════════════════════════════════
+async function loadRhythm(ticker) {
+  document.getElementById('rhythm-loading').style.display='block';
+  document.getElementById('rhythm-loading').textContent=`⟳ LOADING ${ticker} RHYTHM DATA…`;
+  document.getElementById('rhythm-content').style.display='none';
+  if (rhythmCache[ticker]) { renderRhythm(ticker, rhythmCache[ticker].cycles, rhythmCache[ticker].exDivDates); return; }
+  const [candleRes, divRes] = await Promise.allSettled([finnhubCandles(ticker,365), finnhubDividends(ticker)]);
+  const candles = candleRes.status==='fulfilled'?candleRes.value:null;
+  const apiDivs = divRes.status==='fulfilled'?divRes.value:[];
+  const allDivs = [...new Set([...apiDivs,...(RHYTHM_ETF_DIVS[ticker]||[])])].sort().reverse();
+  if (!candles) { document.getElementById('rhythm-loading').textContent='Unable to load price history — check API key or try again.'; return; }
+  const cycles = analyzeCycles(candles.map, allDivs);
+  rhythmCache[ticker] = { cycles, exDivDates:allDivs };
+  renderRhythm(ticker, cycles, allDivs);
+}
+
+function switchRhythm(ticker, btn) {
+  rhythmTicker=ticker;
+  document.querySelectorAll('.rhythm-etf-tab').forEach(t=>{ t.style.borderColor=''; t.style.color=''; });
+  btn.style.borderColor='var(--gold)'; btn.style.color='var(--gold)';
+  loadRhythm(ticker);
+}
+
+// ════════════════════════════════════════════════════════
+// UNIVERSAL SCANNER TAB
+// ════════════════════════════════════════════════════════
+function renderFavorites() {
+  const wrap = document.getElementById('fav-chips');
+  const section = document.getElementById('fav-section');
+  if (!favorites.length) {
+    wrap.innerHTML = '<span class="fav-add-hint">Search a ticker and save it as a favorite to see it here.</span>';
+    return;
+  }
+  wrap.innerHTML = favorites.map(f=>`
+    <div class="fav-chip" onclick="loadFavorite('${f}')">
+      <span class="fav-chip-text">${f}</span>
+      <span class="fav-chip-remove" onclick="removeFavorite(event,'${f}')">×</span>
+    </div>`).join('');
+}
+
+function loadFavorite(ticker) {
+  document.getElementById('scanner-input').value = ticker;
+  runScan();
+}
+
+function removeFavorite(e, ticker) {
+  e.stopPropagation();
+  favorites = favorites.filter(f=>f!==ticker);
+  localStorage.setItem('mr_favorites', JSON.stringify(favorites));
+  renderFavorites();
+}
+
+function saveFavorite(ticker) {
+  if (!favorites.includes(ticker)) {
+    favorites.push(ticker);
+    localStorage.setItem('mr_favorites', JSON.stringify(favorites));
+    renderFavorites();
+  }
+}
+
+async function runScan() {
+  const raw = document.getElementById('scanner-input').value.trim().toUpperCase();
+  if (!raw) return;
+  const ticker = raw;
+  const btn = document.getElementById('scan-btn');
+  btn.disabled=true; btn.textContent='SCANNING…';
+  document.getElementById('scanner-area').innerHTML = `<div class="scanner-loading"><span class="spin">⟳</span> ANALYZING ${ticker}…</div>`;
+
+  // Check cache
+  if (scanCache[ticker]) {
+    renderScanResult(ticker, scanCache[ticker]);
+    btn.disabled=false; btn.textContent='SCAN';
+    return;
+  }
+
+  const [quoteRes, candleRes, divRes, nameRes] = await Promise.allSettled([
+    finnhubQuote(ticker),
+    finnhubCandles(ticker, 365),
+    finnhubDividends(ticker),
+    finnhubProfile(ticker),
+  ]);
+
+  const quote   = quoteRes.status==='fulfilled'   ? quoteRes.value   : null;
+  const candles = candleRes.status==='fulfilled'  ? candleRes.value  : null;
+  const divs    = divRes.status==='fulfilled'     ? divRes.value     : [];
+  const name    = nameRes.status==='fulfilled'    ? nameRes.value    : ticker;
+
+  if (!quote && !candles) {
+    document.getElementById('scanner-area').innerHTML = `<div class="scanner-loading" style="color:var(--red)">Could not find data for "${ticker}". Check the ticker symbol and try again.</div>`;
+    btn.disabled=false; btn.textContent='SCAN';
+    return;
+  }
+
+  const cycles = candles ? analyzeCycles(candles.map, divs) : [];
+  const naturalCycles = candles ? findNaturalCycles(candles.closes) : null;
+  const result = { quote, candles, divs, cycles, naturalCycles, name };
+  scanCache[ticker] = result;
+  renderScanResult(ticker, result);
+  btn.disabled=false; btn.textContent='SCAN';
+}
+
+function findNaturalCycles(closes) {
+  if (!closes || closes.length < 30) return null;
+  // Find local peaks and troughs using a simple rolling window
+  const window = 5;
+  const peaks = [], troughs = [];
+  for (let i=window; i<closes.length-window; i++) {
+    const slice = closes.slice(i-window, i+window+1);
+    const max = Math.max(...slice), min = Math.min(...slice);
+    if (closes[i]===max) peaks.push(i);
+    if (closes[i]===min) troughs.push(i);
+  }
+  if (peaks.length < 2 || troughs.length < 2) return null;
+  // Average distance between peaks
+  const peakGaps = peaks.slice(1).map((p,i)=>p-peaks[i]);
+  const avgCycle = peakGaps.reduce((a,b)=>a+b,0)/peakGaps.length;
+  const consistency = peakGaps.filter(g=>Math.abs(g-avgCycle)<avgCycle*0.4).length / peakGaps.length;
+  // Last trough = potential entry, last peak = potential exit target
+  const lastTrough = troughs[troughs.length-1];
+  const lastPeak   = peaks[peaks.length-1];
+  const daysSinceLastTrough = closes.length - 1 - lastTrough;
+  const daysSinceLastPeak   = closes.length - 1 - lastPeak;
+  // Avg gain from trough to next peak
+  const troughToPeakGains = troughs.slice(0,-1).map((t,i) => {
+    const nextPeak = peaks.find(p=>p>t);
+    if (!nextPeak) return null;
+    return ((closes[nextPeak]-closes[t])/closes[t])*100;
+  }).filter(Boolean);
+  const avgGain = troughToPeakGains.length ? troughToPeakGains.reduce((a,b)=>a+b,0)/troughToPeakGains.length : null;
+  return { avgCycleDays:Math.round(avgCycle), consistency, peaks, troughs, lastTrough, lastPeak, daysSinceLastTrough, daysSinceLastPeak, avgGain, troughToPeakGains };
+}
+
+function waveScore(cycles, naturalCycles, hasDivs) {
+  let score = 0;
+  if (hasDivs && cycles.length >= 3) {
+    const preBull = cycles.filter(c=>c.preMove>0).length/cycles.length;
+    const postBear = cycles.filter(c=>c.postMove<0).length/cycles.length;
+    score += preBull * 40 + postBear * 20;
+  }
+  if (naturalCycles) {
+    score += naturalCycles.consistency * 30;
+    if (naturalCycles.avgGain > 5) score += 10;
+  }
+  return Math.min(Math.round(score), 99);
+}
+
+function entryExitSignal(cycles, naturalCycles, hasDivs, divDates) {
+  // Check dividend window first
+  if (hasDivs && divDates.length) {
+    const status = currentWindowStatus(divDates);
+    if (status.type==='post-div' && status.days <= 3) return { type:'entry', icon:'⚡', label:'POTENTIAL ENTRY WINDOW', desc:`${status.days} day${status.days!==1?'s':''} after ex-dividend. Historical post-div sellers may be flushing out — watch for a floor forming.` };
+    if (status.type==='pre-div' && status.days <= 4) return { type:'watch', icon:'⚠', label:'PRE-DIVIDEND WINDOW', desc:`${status.days} day${status.days!==1?'s':''} before ex-date. Pre-div runup may be in progress. Exit before ex-date or hold for dividend — not both.` };
+    if (status.type==='post-div') return { type:'watch', icon:'◉', label:'POST-DIV DRIFT ZONE', desc:`${status.days} days after ex-date. Price may still be settling. Wait for stabilization before new entry.` };
+  }
+  // Natural cycle signal
+  if (naturalCycles) {
+    const { avgCycleDays, daysSinceLastTrough, daysSinceLastPeak, consistency } = naturalCycles;
+    if (consistency > 0.5) {
+      const cycleProgress = (daysSinceLastTrough % avgCycleDays) / avgCycleDays;
+      if (cycleProgress < 0.25) return { type:'entry', icon:'⚡', label:'NEAR CYCLE LOW', desc:`Price is in the early phase of a ~${avgCycleDays}-day natural cycle. Historical troughs have been followed by an avg gain of ${fmt(naturalCycles.avgGain)}%.` };
+      if (cycleProgress > 0.65 && cycleProgress < 0.85) return { type:'exit', icon:'⚠', label:'APPROACHING CYCLE PEAK', desc:`Cycle suggests price may be approaching a peak zone in the ~${avgCycleDays}-day rhythm. Consider tightening stops or planning exit.` };
+      if (cycleProgress >= 0.85) return { type:'watch', icon:'◉', label:'LATE CYCLE — CAUTION', desc:`Near the top of the estimated cycle. Risk/reward may be unfavorable for new entries here.` };
+    }
+  }
+  return { type:'neutral', icon:'◉', label:'NO CLEAR SIGNAL', desc:'No strong entry or exit signal detected in the current position within this ticker\'s rhythm. Continue monitoring.' };
+}
+
+function renderScanResult(ticker, { quote, candles, divs, cycles, naturalCycles, name }) {
+  const hasDivs = divs && divs.length > 0;
+  const score = waveScore(cycles, naturalCycles, hasDivs);
+  const signal = entryExitSignal(cycles, naturalCycles, hasDivs, divs);
+  const isFav = favorites.includes(ticker);
+  const scoreColor = score>=70?'var(--green)':score>=40?'var(--amber)':'var(--red)';
+  const avgPre  = cycles.length ? cycles.reduce((s,c)=>s+c.preMove,0)/cycles.length : null;
+  const avgPost = cycles.length ? cycles.reduce((s,c)=>s+c.postMove,0)/cycles.length : null;
+
+  let html = `<div class="scanner-result">
+    <div class="result-header">
+      <div>
+        <div class="result-ticker">${ticker}</div>
+        <div class="result-name">${name}</div>
+      </div>
+      <div class="result-price-wrap">
+        <div class="result-price">${quote?fmtUSD(quote.price):'—'}</div>
+        ${quote?`<div class="result-change ${quote.changePct>=0?'up':'down'}">${fmtPct(quote.changePct)} (${fmtUSD(Math.abs(quote.change))})</div>`:''}
+      </div>
+    </div>
+
+    <div class="result-actions">
+      <button class="save-fav-btn ${isFav?'saved':''}" id="fav-btn-${ticker}" onclick="toggleFav('${ticker}')">
+        ${isFav?'★ Saved':'☆ Save Favorite'}
+      </button>
+    </div>
+
+    <!-- WAVE SCORE -->
+    <div class="wave-score-wrap">
+      <div>
+        <div class="wave-score-label">Wave Score</div>
+        <div class="wave-score-num" style="color:${scoreColor}">${score}</div>
+      </div>
+      <div class="wave-bar-wrap">
+        <div class="wave-score-label">Rhythm Strength</div>
+        <div class="wave-score-desc">${score>=70?'Strong, consistent rhythm detected':score>=40?'Moderate pattern — use with caution':'Weak or irregular — difficult to time'}</div>
+        <div class="wave-bar-track"><div class="wave-bar-fill" style="width:${score}%;background:${scoreColor}"></div></div>
+      </div>
+    </div>
+
+    <!-- SIGNAL -->
+    <div class="signal-box ${signal.type}">
+      <div class="signal-label" style="color:${signal.type==='entry'?'var(--green)':signal.type==='exit'?'var(--red)':signal.type==='watch'?'var(--amber)':'var(--text3)'}">${signal.icon} ${signal.label}</div>
+      <div class="signal-desc">${signal.desc}</div>
+    </div>`;
+
+  // Natural cycle section
+  if (naturalCycles && naturalCycles.consistency > 0.3) {
+    html += `
+    <div style="margin-bottom:14px">
+      <div class="rhythm-chart-label">Natural Price Cycle</div>
+      <div class="rhythm-stats">
+        <div class="rhythm-stat">
+          <div class="rhythm-stat-label">Avg Cycle</div>
+          <div class="rhythm-stat-value" style="color:var(--blue)">${naturalCycles.avgCycleDays}d</div>
+          <div class="rhythm-stat-sub">peak to peak</div>
+        </div>
+        <div class="rhythm-stat">
+          <div class="rhythm-stat-label">Consistency</div>
+          <div class="rhythm-stat-value" style="color:${naturalCycles.consistency>0.6?'var(--green)':'var(--amber)'}">${Math.round(naturalCycles.consistency*100)}%</div>
+          <div class="rhythm-stat-sub">cycle regularity</div>
+        </div>
+        <div class="rhythm-stat">
+          <div class="rhythm-stat-label">Avg Wave Gain</div>
+          <div class="rhythm-stat-value" style="color:var(--green)">${naturalCycles.avgGain?'+'+fmt(naturalCycles.avgGain)+'%':'—'}</div>
+          <div class="rhythm-stat-sub">trough → peak</div>
+        </div>
+        <div class="rhythm-stat">
+          <div class="rhythm-stat-label">Since Last Low</div>
+          <div class="rhythm-stat-value" style="color:var(--amber)">${naturalCycles.daysSinceLastTrough}d</div>
+          <div class="rhythm-stat-sub">days ago</div>
+        </div>
+      </div>
+      ${candles?`<div style="margin-bottom:6px">${drawNaturalCycleChart(candles.closes, naturalCycles)}</div>`:''}
+    </div>`;
+  }
+
+  // Dividend rhythm section
+  if (hasDivs && cycles.length >= 2) {
+    const preBull = cycles.filter(c=>c.preMove>0).length;
+    const postBear = cycles.filter(c=>c.postMove<0).length;
+    html += `
+    <div style="margin-bottom:14px">
+      <div class="rhythm-chart-label">Dividend Rhythm (${cycles.length} cycles)</div>
+      <div class="rhythm-stats">
+        <div class="rhythm-stat"><div class="rhythm-stat-label">Avg Pre-Div</div><div class="rhythm-stat-value" style="color:${avgPre>=0?'var(--green)':'var(--red)'}">${avgPre!=null?(avgPre>=0?'+':'')+fmt(avgPre)+'%':'—'}</div><div class="rhythm-stat-sub">7d before</div></div>
+        <div class="rhythm-stat"><div class="rhythm-stat-label">Avg Post-Div</div><div class="rhythm-stat-value" style="color:${avgPost>=0?'var(--green)':'var(--red)'}">${avgPost!=null?(avgPost>=0?'+':'')+fmt(avgPost)+'%':'—'}</div><div class="rhythm-stat-sub">7d after</div></div>
+        <div class="rhythm-stat"><div class="rhythm-stat-label">Pre-Div Up</div><div class="rhythm-stat-value" style="color:var(--amber)">${Math.round(preBull/cycles.length*100)}%</div><div class="rhythm-stat-sub">of cycles</div></div>
+        <div class="rhythm-stat"><div class="rhythm-stat-label">Post-Div Down</div><div class="rhythm-stat-value" style="color:var(--amber)">${Math.round(postBear/cycles.length*100)}%</div><div class="rhythm-stat-sub">of cycles</div></div>
+      </div>
+      ${cycles.length?`<div>${drawRhythmBars(cycles)}</div>`:''}
+      <table class="cycle-table" style="margin-top:10px">
+        <thead><tr><th>Ex-Date</th><th>Pre 7d</th><th>Ex-Day</th><th>Post 7d</th></tr></thead>
+        <tbody>${cycles.slice(0,6).map(c=>`<tr>
+          <td>${c.exDate}</td>
+          <td class="${c.preMove>=0?'pos':'neg'}">${c.preMove>=0?'+':''}${fmt(c.preMove)}%</td>
+          <td class="${c.exDrop>=0?'pos':'neg'}">${c.exDrop>=0?'+':''}${fmt(c.exDrop)}%</td>
+          <td class="${c.postMove>=0?'pos':'neg'}">${c.postMove>=0?'+':''}${fmt(c.postMove)}%</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+  } else if (!hasDivs) {
+    html += `<div style="font-family:var(--mono);font-size:10px;color:var(--text3);border:1px solid var(--border);border-radius:4px;padding:10px 12px;margin-bottom:14px">No dividend history found — pattern analysis based on natural price cycles only.</div>`;
+  }
+
+  // Insight
+  html += `<div class="rhythm-insight">
+    <div class="rhythm-insight-label">Pattern Intelligence — ${ticker}</div>
+    <p>${score>=70?`<span class="insight-hl" style="color:var(--green)">Strong rhythm detected.</span> This ticker shows consistent, repeatable price cycles that may be usable for timing entries and exits.`:score>=40?`<span class="insight-hl" style="color:var(--amber)">Moderate rhythm detected.</span> Some consistency in price cycles, but macro events can override the pattern. Use in combination with other signals.`:`<span class="insight-hl" style="color:var(--red)">Weak rhythm.</span> Price behavior appears irregular or driven more by external events than internal cycles. Difficult to time reliably.`}</p>
+    ${naturalCycles&&naturalCycles.avgGain?`<p>Historical wave gains from trough to peak average <span class="insight-hl" style="color:var(--green)">+${fmt(naturalCycles.avgGain)}%</span> over a ~${naturalCycles.avgCycleDays}-day cycle. Riding full waves rather than capturing dividends may offer better returns.</p>`:''}
+  </div>
+  </div>`;
+
+  document.getElementById('scanner-area').innerHTML = html;
+}
+
+function toggleFav(ticker) {
+  if (favorites.includes(ticker)) {
+    removeFavorite({stopPropagation:()=>{}}, ticker);
+    const btn = document.getElementById(`fav-btn-${ticker}`);
+    if(btn){btn.textContent='☆ Save Favorite';btn.classList.remove('saved');}
+  } else {
+    saveFavorite(ticker);
+    const btn = document.getElementById(`fav-btn-${ticker}`);
+    if(btn){btn.textContent='★ Saved';btn.classList.add('saved');}
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// SHARED RHYTHM ANALYSIS
+// ════════════════════════════════════════════════════════
+function analyzeCycles(priceMap, exDivDates) {
+  const cycles = [];
+  if (!priceMap || !exDivDates?.length) return cycles;
+  exDivDates.forEach(exDateStr => {
+    const exDate = new Date(exDateStr);
+    const window = [];
+    for (let d=-WINDOW_DAYS; d<=WINDOW_DAYS; d++) {
+      const dt = new Date(exDate); dt.setDate(dt.getDate()+d);
+      const key = dt.toISOString().slice(0,10);
+      window.push({ day:d, date:key, price:priceMap[key]??null });
+    }
+    const preBefore = window.filter(w=>w.day<0&&w.price!==null);
+    const postAfter  = window.filter(w=>w.day>0&&w.price!==null);
+    const onExDate   = window.find(w=>w.day===0&&w.price!==null);
+    if (preBefore.length<2||postAfter.length<2) return;
+    const preStart=preBefore[0].price, preEnd=preBefore[preBefore.length-1].price;
+    const postStart=postAfter[0].price, postEnd=postAfter[postAfter.length-1].price;
+    const exPrice=onExDate?onExDate.price:preEnd;
+    cycles.push({
+      exDate:exDateStr,
+      preMove:((preEnd-preStart)/preStart)*100,
+      postMove:((postEnd-postStart)/postStart)*100,
+      exDrop:((exPrice-preEnd)/preEnd)*100,
+    });
+  });
+  return cycles;
+}
+
+function currentWindowStatus(exDivDates) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  for (const dateStr of exDivDates) {
+    const ex = new Date(dateStr); ex.setHours(0,0,0,0);
+    const diff = Math.round((today-ex)/86400000);
+    if (diff>=-WINDOW_DAYS&&diff<0) return {type:'pre-div',days:Math.abs(diff),exDate:dateStr,msg:`You are ${Math.abs(diff)} day${Math.abs(diff)!==1?'s':''} before ex-dividend date (${dateStr}). Pre-div runup window is active.`};
+    if (diff===0) return {type:'pre-div',days:0,exDate:dateStr,msg:`Today is the ex-dividend date (${dateStr}). Price adjustment typically occurs at open.`};
+    if (diff>0&&diff<=WINDOW_DAYS) return {type:'post-div',days:diff,exDate:dateStr,msg:`${diff} day${diff!==1?'s':''} after ex-dividend date (${dateStr}). Watch for post-div drift.`};
+  }
+  const upcoming = exDivDates.find(d=>new Date(d)>today);
+  if (upcoming) { const daysTo=Math.round((new Date(upcoming)-today)/86400000); return {type:'neutral',days:daysTo,exDate:upcoming,msg:`Next ex-dividend: ${upcoming} — ${daysTo} day${daysTo!==1?'s':''} away. Outside active rhythm window.`}; }
+  return {type:'neutral',days:null,exDate:null,msg:'No upcoming ex-dividend dates found.'};
+}
+
+function renderRhythm(ticker, cycles, exDivDates) {
+  const status = currentWindowStatus(exDivDates);
+  const avgPre  = cycles.length?cycles.reduce((s,c)=>s+c.preMove,0)/cycles.length:null;
+  const avgPost = cycles.length?cycles.reduce((s,c)=>s+c.postMove,0)/cycles.length:null;
+  const avgDrop = cycles.length?cycles.reduce((s,c)=>s+c.exDrop,0)/cycles.length:null;
+  const preBull = cycles.filter(c=>c.preMove>0).length;
+  const postBear = cycles.filter(c=>c.postMove<0).length;
+  const wc = status.type==='pre-div'?'pre-div':status.type==='post-div'?'post-div':'neutral-win';
+  const wColor = status.type==='pre-div'?'#fbbf24':status.type==='post-div'?'#f87171':'#555';
+  const wIcon  = status.type==='pre-div'?'⚡':status.type==='post-div'?'⚠':'◉';
+
+  document.getElementById('rhythm-content').innerHTML = `
+    <div class="rhythm-window ${wc}">
+      <div class="rhythm-window-label" style="color:${wColor}">${wIcon} ${status.type==='pre-div'?'PRE-DIVIDEND WINDOW ACTIVE':status.type==='post-div'?'POST-DIVIDEND WINDOW ACTIVE':'OUTSIDE ACTIVE WINDOW'}</div>
+      <div class="rhythm-window-desc">${status.msg}</div>
+    </div>
+    <div class="rhythm-stats">
+      <div class="rhythm-stat"><div class="rhythm-stat-label">Avg Pre-Div</div><div class="rhythm-stat-value" style="color:${avgPre>=0?'var(--green)':'var(--red)'}">${avgPre!=null?(avgPre>=0?'+':'')+fmt(avgPre)+'%':'—'}</div><div class="rhythm-stat-sub">${WINDOW_DAYS}d before</div></div>
+      <div class="rhythm-stat"><div class="rhythm-stat-label">Avg Ex-Drop</div><div class="rhythm-stat-value" style="color:${avgDrop>=0?'var(--green)':'var(--red)'}">${avgDrop!=null?(avgDrop>=0?'+':'')+fmt(avgDrop)+'%':'—'}</div><div class="rhythm-stat-sub">ex-date day</div></div>
+      <div class="rhythm-stat"><div class="rhythm-stat-label">Avg Post-Div</div><div class="rhythm-stat-value" style="color:${avgPost>=0?'var(--green)':'var(--red)'}">${avgPost!=null?(avgPost>=0?'+':'')+fmt(avgPost)+'%':'—'}</div><div class="rhythm-stat-sub">${WINDOW_DAYS}d after</div></div>
+      <div class="rhythm-stat"><div class="rhythm-stat-label">Pre-Div Up</div><div class="rhythm-stat-value" style="color:var(--amber)">${cycles.length?Math.round(preBull/cycles.length*100)+'%':'—'}</div><div class="rhythm-stat-sub">of cycles</div></div>
+    </div>
+    ${cycles.length?`<div class="rhythm-chart-label">Pre vs Post Per Cycle</div>${drawRhythmBars(cycles)}`:''}
+    ${cycles.length?`<table class="cycle-table"><thead><tr><th>Ex-Date</th><th>Pre ${WINDOW_DAYS}d</th><th>Ex-Day</th><th>Post ${WINDOW_DAYS}d</th></tr></thead><tbody>${cycles.slice(0,8).map(c=>`<tr><td>${c.exDate}</td><td class="${c.preMove>=0?'pos':'neg'}">${c.preMove>=0?'+':''}${fmt(c.preMove)}%</td><td class="${c.exDrop>=0?'pos':'neg'}">${c.exDrop>=0?'+':''}${fmt(c.exDrop)}%</td><td class="${c.postMove>=0?'pos':'neg'}">${c.postMove>=0?'+':''}${fmt(c.postMove)}%</td></tr>`).join('')}</tbody></table>`:'<div style="font-size:12px;color:var(--text3);font-style:italic;padding:8px 0">Insufficient history for cycle analysis.</div>'}
+    <div class="rhythm-insight"><div class="rhythm-insight-label">Pattern Intelligence</div>${cycles.length>=3?`<p>Across <span class="insight-hl" style="color:var(--gold)">${cycles.length} cycles</span>, pre-div runup occurred in <span class="insight-hl" style="color:var(--green)">${preBull} of ${cycles.length}</span> and post-div decline in <span class="insight-hl" style="color:var(--red)">${postBear} of ${cycles.length}</span> cases.</p><p>${avgPre>0.3?`Avg pre-div drift of <span class="insight-hl" style="color:var(--amber)">${fmt(avgPre)}%</span> suggests an accumulation window exists before each ex-date.`:'Pre-div movement has been modest.'} ${avgPost<-0.3?`Post-div selling averages <span class="insight-hl" style="color:var(--red)">${fmt(Math.abs(avgPost))}%</span> — sizing discipline is critical.`:'Post-div drift has been relatively contained.'}</p>`:'<p>Not enough completed cycles to establish a reliable pattern yet.</p>'}</div>`;
+
+  document.getElementById('rhythm-loading').style.display='none';
+  document.getElementById('rhythm-content').style.display='block';
+}
+
+// ════════════════════════════════════════════════════════
+// CHARTS
+// ════════════════════════════════════════════════════════
+function drawRhythmBars(cycles) {
+  const W=500, H=70, pad=20;
+  const allVals=[...cycles.map(c=>c.preMove),...cycles.map(c=>c.postMove)];
+  const minV=Math.min(...allVals), maxV=Math.max(...allVals);
+  const range=maxV-minV||1;
+  const barW=Math.max(6,Math.floor((W-pad*2)/(cycles.length*3)));
+  let bars='';
+  cycles.forEach((c,i)=>{
+    const x1=pad+i*(barW*2+barW*0.5);
+    const x2=x1+barW+4;
+    const preH=Math.max(2,Math.abs(c.preMove/range)*(H-10));
+    const preY=c.preMove>=0?H/2-preH:H/2;
+    const postH=Math.max(2,Math.abs(c.postMove/range)*(H-10));
+    const postY=c.postMove>=0?H/2-postH:H/2;
+    bars+=`<rect x="${x1}" y="${preY}" width="${barW}" height="${preH}" fill="${c.preMove>=0?'#4ade80':'#f87171'}" opacity="0.8" rx="1"/>`;
+    bars+=`<rect x="${x2}" y="${postY}" width="${barW}" height="${postH}" fill="${c.postMove>=0?'#4ade80':'#f87171'}" opacity="0.4" rx="1"/>`;
+    bars+=`<text x="${x1+barW}" y="${H+11}" font-size="7" fill="#333" font-family="monospace" text-anchor="middle">${c.exDate.slice(5)}</text>`;
+  });
+  return `<svg width="100%" viewBox="0 0 ${W} ${H+14}" style="display:block;margin-bottom:12px;overflow:visible">
+    <line x1="${pad}" y1="${H/2}" x2="${W-pad}" y2="${H/2}" stroke="#222" stroke-width="1"/>
+    ${bars}
+    <text x="4" y="${H/2-2}" font-size="7" fill="#333" font-family="monospace">+</text>
+    <text x="4" y="${H/2+10}" font-size="7" fill="#333" font-family="monospace">−</text>
+  </svg>`;
+}
+
+function drawNaturalCycleChart(closes, nc) {
+  if (!closes||closes.length<2) return '';
+  const W=500, H=70, pad=4;
+  const min=Math.min(...closes), max=Math.max(...closes), range=max-min||1;
+  const pts=closes.map((v,i)=>{
+    const x=pad+(i/(closes.length-1))*(W-pad*2);
+    const y=H-((v-min)/range)*(H-6)-3;
+    return `${x},${y}`;
+  }).join(' ');
+  // Mark peaks and troughs
+  let markers='';
+  nc.peaks.forEach(i=>{
+    const x=pad+(i/(closes.length-1))*(W-pad*2);
+    const y=H-((closes[i]-min)/range)*(H-6)-3;
+    markers+=`<circle cx="${x}" cy="${y}" r="3" fill="none" stroke="#f87171" stroke-width="1.5" opacity="0.7"/>`;
+  });
+  nc.troughs.forEach(i=>{
+    const x=pad+(i/(closes.length-1))*(W-pad*2);
+    const y=H-((closes[i]-min)/range)*(H-6)-3;
+    markers+=`<circle cx="${x}" cy="${y}" r="3" fill="none" stroke="#4ade80" stroke-width="1.5" opacity="0.7"/>`;
+  });
+  const isUp=closes[closes.length-1]>=closes[0];
+  return `<svg width="100%" viewBox="0 0 ${W} ${H+8}" style="display:block;margin-bottom:4px">
+    <polyline points="${pts}" fill="none" stroke="${isUp?'#4ade80':'#f87171'}" stroke-width="1.5" stroke-linejoin="round"/>
+    ${markers}
+    <text x="4" y="${H+7}" font-size="7" fill="#333" font-family="monospace">● peaks  ● troughs</text>
+  </svg>`;
+}
+
+function drawSparkline(id, data) {
+  const svg=document.getElementById(id);
+  if (!svg||!data||data.length<2) return;
+  const W=300,H=40,min=Math.min(...data),max=Math.max(...data),range=max-min||1;
+  const pts=data.map((v,i)=>`${(i/(data.length-1))*W},${H-((v-min)/range)*(H-4)-2}`).join(' ');
+  const isUp=data[data.length-1]>=data[0];
+  const lc=isUp?'#4ade80':'#f87171';
+  const gid=`g${id.replace(/[^a-z0-9]/gi,'')}`;
+  svg.innerHTML=`<defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${lc}" stop-opacity="0.18"/><stop offset="100%" stop-color="${lc}" stop-opacity="0"/></linearGradient></defs>
+    <polygon points="0,${H} ${pts} ${W},${H}" fill="url(#${gid})"/>
+    <polyline points="${pts}" fill="none" stroke="${lc}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+}
+
+// ════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════
+function fmt(n,d=2){ if(n==null||isNaN(n))return'—'; return n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function fmtUSD(n){ if(n==null||isNaN(n))return'—'; return'$'+fmt(n); }
+function fmtPct(n){ if(n==null||isNaN(n))return'—'; return(n>=0?'+':'')+fmt(n)+'%'; }
+function daysUntil(s){ if(!s)return null; return Math.ceil((new Date(s)-new Date())/86400000); }
+function maSimple(arr,period){ if(!arr||arr.length<period)return null; const sl=arr.slice(-period); return sl.reduce((a,b)=>a+b,0)/period; }
+</script>
+</body>
+</html>
