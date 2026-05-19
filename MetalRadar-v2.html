@@ -203,6 +203,51 @@ body::before {
   .rhythm-stats { grid-template-columns:repeat(2,1fr); }
   .header { padding:12px 14px; }
 }
+
+  /* ── RISK PROFILE ── */
+  .risk-profile-banner {
+    margin: 12px 16px 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .risk-profile-left { display:flex; align-items:center; gap:10px; }
+  .risk-profile-icon { font-size:18px; }
+  .risk-profile-label { font-family:var(--mono); font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:2px; }
+  .risk-profile-value { font-family:var(--mono); font-size:12px; font-weight:700; color:var(--green); }
+  .risk-profile-change { font-family:var(--mono); font-size:9px; color:var(--text3); cursor:pointer; text-decoration:underline; padding:4px 8px; border:1px solid var(--border2); border-radius:3px; background:transparent; }
+
+  /* RISK PROFILE MODAL */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:200; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .modal-box { background:var(--surface); border:1px solid var(--border2); border-radius:8px; padding:24px; width:100%; max-width:400px; }
+  .modal-title { font-family:var(--mono); font-size:13px; letter-spacing:0.15em; margin-bottom:6px; }
+  .modal-sub { font-size:12px; color:var(--text3); font-style:italic; margin-bottom:20px; line-height:1.5; }
+  .profile-option { border:1px solid var(--border2); border-radius:5px; padding:12px 14px; margin-bottom:10px; cursor:pointer; transition:all 0.2s; }
+  .profile-option:hover { border-color:var(--gold); }
+  .profile-option.selected { border-color:var(--green); background:rgba(74,222,128,0.05); }
+  .profile-option-title { font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.08em; margin-bottom:4px; }
+  .profile-option-desc { font-size:11px; color:var(--text3); line-height:1.5; }
+  .modal-save { width:100%; background:var(--gold); border:none; color:#000; font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.15em; padding:11px; border-radius:4px; cursor:pointer; margin-top:6px; }
+
+  /* POSITION RISK PANEL */
+  .pos-risk-panel { background:var(--bg); border:1px solid var(--border); border-radius:5px; padding:12px 14px; margin-bottom:14px; }
+  .pos-risk-title { font-family:var(--mono); font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:10px; }
+  .pos-risk-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .pos-risk-item { background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:8px 10px; }
+  .pos-risk-item-label { font-family:var(--mono); font-size:8px; color:var(--text3); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:3px; }
+  .pos-risk-item-value { font-family:var(--mono); font-size:11px; font-weight:700; margin-bottom:2px; }
+  .pos-risk-item-sub { font-size:9px; color:var(--text3); font-style:italic; }
+  .pos-risk-flag { display:flex; gap:6px; align-items:flex-start; padding:7px 10px; border-radius:4px; margin-top:8px; font-size:10px; }
+  .pos-risk-flag.warn { background:rgba(251,191,36,0.06); border:1px solid rgba(251,191,36,0.2); color:var(--amber); }
+  .pos-risk-flag.safe { background:rgba(74,222,128,0.05); border:1px solid rgba(74,222,128,0.2); color:var(--green); }
+  .pos-risk-flag.info { background:rgba(96,165,250,0.05); border:1px solid rgba(96,165,250,0.2); color:var(--blue); }
+  .survivor-quote { font-family:var(--serif); font-style:italic; font-size:11px; color:var(--text3); border-left:2px solid var(--gold); padding-left:10px; margin-top:10px; line-height:1.6; }
 </style>
 </head>
 <body>
@@ -239,6 +284,39 @@ body::before {
   <div class="tab-nav">
     <button class="tab-btn active" onclick="switchTab('portfolio',this)">◈ Portfolio</button>
     <button class="tab-btn" onclick="switchTab('scanner',this)">⟳ Rhythm Scanner</button>
+  </div>
+
+  <!-- RISK PROFILE BANNER -->
+  <div class="risk-profile-banner" id="risk-banner">
+    <div class="risk-profile-left">
+      <div class="risk-profile-icon">🛡</div>
+      <div>
+        <div class="risk-profile-label">Trading Profile</div>
+        <div class="risk-profile-value" id="risk-profile-display">Cash Only — No Leverage</div>
+      </div>
+    </div>
+    <button class="risk-profile-change" onclick="openRiskModal()">Change</button>
+  </div>
+
+  <!-- RISK PROFILE MODAL -->
+  <div class="modal-overlay" id="risk-modal" style="display:none">
+    <div class="modal-box">
+      <div class="modal-title">YOUR TRADING PROFILE</div>
+      <div class="modal-sub">This adjusts how the app frames risk across all scan results. No right or wrong answer — accuracy helps you.</div>
+      <div class="profile-option selected" id="opt-cash" onclick="selectProfile('cash')">
+        <div class="profile-option-title" style="color:var(--green)">✓ CASH ONLY — NO LEVERAGE</div>
+        <div class="profile-option-desc">I only trade with money I have. If I can't afford the trade, I don't make it. Maximum loss is limited to capital invested.</div>
+      </div>
+      <div class="profile-option" id="opt-some" onclick="selectProfile('some')">
+        <div class="profile-option-title" style="color:var(--amber)">SOME MARGIN — CONTROLLED</div>
+        <div class="profile-option-desc">I use limited margin on select trades. I understand I can lose more than invested in leveraged positions.</div>
+      </div>
+      <div class="profile-option" id="opt-leverage" onclick="selectProfile('leverage')">
+        <div class="profile-option-title" style="color:var(--red)">ACTIVE LEVERAGE / OPTIONS</div>
+        <div class="profile-option-desc">I use margin, options, or leveraged products regularly. I understand full risk exposure including losses beyond capital.</div>
+      </div>
+      <button class="modal-save" onclick="saveProfile()">SAVE PROFILE</button>
+    </div>
   </div>
 
   <!-- ══ PORTFOLIO TAB ══ -->
@@ -370,9 +448,11 @@ function showApp() {
   refreshPortfolio();
   loadRhythm('KSLV');
   renderFavorites();
+  applyRiskProfile();
 }
 
 function switchTab(name, btn) {
+  applyRiskProfile();
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
@@ -407,11 +487,17 @@ async function finnhubCandles(symbol, days=365) {
 async function finnhubDividends(symbol) {
   try {
     const to = new Date().toISOString().slice(0,10);
-    const from = new Date(Date.now()-400*86400000).toISOString().slice(0,10);
-    const r = await fetch(`https://finnhub.io/api/v1/stock/dividend?symbol=${encodeURIComponent(symbol)}&from=${from}&to=${to}&token=${API_KEY}`);
+    const from = new Date(Date.now()-730*86400000).toISOString().slice(0,10);
+    const r = await fetch(`https://finnhub.io/api/v1/stock/dividend2?symbol=${encodeURIComponent(symbol)}&token=${API_KEY}`);
     const d = await r.json();
-    if (!Array.isArray(d)||!d.length) return [];
-    return d.map(x=>x.exDate||x.date).filter(Boolean).sort().reverse();
+    if (d && Array.isArray(d.data) && d.data.length) {
+      return d.data.map(x=>x.exDate||x.ex_date||x.date).filter(Boolean).sort().reverse();
+    }
+    // Fallback to v1
+    const r2 = await fetch(`https://finnhub.io/api/v1/stock/dividend?symbol=${encodeURIComponent(symbol)}&from=${from}&to=${to}&token=${API_KEY}`);
+    const d2 = await r2.json();
+    if (!Array.isArray(d2)||!d2.length) return [];
+    return d2.map(x=>x.exDate||x.date).filter(Boolean).sort().reverse();
   } catch { return []; }
 }
 
@@ -658,34 +744,51 @@ async function runScan() {
 }
 
 function findNaturalCycles(closes) {
-  if (!closes || closes.length < 30) return null;
-  // Find local peaks and troughs using a simple rolling window
-  const window = 5;
+  if (!closes || closes.length < 20) return null;
+  const win = 3;
   const peaks = [], troughs = [];
-  for (let i=window; i<closes.length-window; i++) {
-    const slice = closes.slice(i-window, i+window+1);
+  for (let i=win; i<closes.length-win; i++) {
+    const slice = closes.slice(i-win, i+win+1);
     const max = Math.max(...slice), min = Math.min(...slice);
-    if (closes[i]===max) peaks.push(i);
-    if (closes[i]===min) troughs.push(i);
+    if (closes[i] >= max * 0.999) peaks.push(i);
+    if (closes[i] <= min * 1.001) troughs.push(i);
   }
-  if (peaks.length < 2 || troughs.length < 2) return null;
-  // Average distance between peaks
-  const peakGaps = peaks.slice(1).map((p,i)=>p-peaks[i]);
+  const dedupe = (arr, closes, keepMax) => {
+    const out = [];
+    let i = 0;
+    while (i < arr.length) {
+      let j = i;
+      while (j+1 < arr.length && arr[j+1] - arr[j] <= win*2) j++;
+      const group = arr.slice(i, j+1);
+      if (keepMax) out.push(group.reduce((a,b) => closes[a]>=closes[b]?a:b));
+      else out.push(group.reduce((a,b) => closes[a]<=closes[b]?a:b));
+      i = j+1;
+    }
+    return out;
+  };
+  const cleanPeaks = dedupe(peaks, closes, true);
+  const cleanTroughs = dedupe(troughs, closes, false);
+  if (cleanPeaks.length < 2 || cleanTroughs.length < 2) return null;
+  const peakGaps = cleanPeaks.slice(1).map((p,i)=>p-cleanPeaks[i]);
   const avgCycle = peakGaps.reduce((a,b)=>a+b,0)/peakGaps.length;
-  const consistency = peakGaps.filter(g=>Math.abs(g-avgCycle)<avgCycle*0.4).length / peakGaps.length;
-  // Last trough = potential entry, last peak = potential exit target
-  const lastTrough = troughs[troughs.length-1];
-  const lastPeak   = peaks[peaks.length-1];
+  const consistency = peakGaps.filter(g=>Math.abs(g-avgCycle)<avgCycle*0.55).length / peakGaps.length;
+  const lastTrough = cleanTroughs[cleanTroughs.length-1];
+  const lastPeak   = cleanPeaks[cleanPeaks.length-1];
   const daysSinceLastTrough = closes.length - 1 - lastTrough;
   const daysSinceLastPeak   = closes.length - 1 - lastPeak;
-  // Avg gain from trough to next peak
-  const troughToPeakGains = troughs.slice(0,-1).map((t,i) => {
-    const nextPeak = peaks.find(p=>p>t);
+  const troughToPeakGains = cleanTroughs.slice(0,-1).map(t => {
+    const nextPeak = cleanPeaks.find(p=>p>t);
     if (!nextPeak) return null;
     return ((closes[nextPeak]-closes[t])/closes[t])*100;
-  }).filter(Boolean);
+  }).filter(v=>v!==null&&!isNaN(v));
   const avgGain = troughToPeakGains.length ? troughToPeakGains.reduce((a,b)=>a+b,0)/troughToPeakGains.length : null;
-  return { avgCycleDays:Math.round(avgCycle), consistency, peaks, troughs, lastTrough, lastPeak, daysSinceLastTrough, daysSinceLastPeak, avgGain, troughToPeakGains };
+  const peakToTroughDrops = cleanPeaks.slice(0,-1).map(p => {
+    const nextTrough = cleanTroughs.find(t=>t>p);
+    if (!nextTrough) return null;
+    return ((closes[p]-closes[nextTrough])/closes[p])*100;
+  }).filter(v=>v!==null&&!isNaN(v));
+  const avgDrop = peakToTroughDrops.length ? peakToTroughDrops.reduce((a,b)=>a+b,0)/peakToTroughDrops.length : null;
+  return { avgCycleDays:Math.round(avgCycle), consistency, peaks:cleanPeaks, troughs:cleanTroughs, lastTrough, lastPeak, daysSinceLastTrough, daysSinceLastPeak, avgGain, avgDrop, troughToPeakGains };
 }
 
 function waveScore(cycles, naturalCycles, hasDivs) {
@@ -696,8 +799,11 @@ function waveScore(cycles, naturalCycles, hasDivs) {
     score += preBull * 40 + postBear * 20;
   }
   if (naturalCycles) {
-    score += naturalCycles.consistency * 30;
-    if (naturalCycles.avgGain > 5) score += 10;
+    score += naturalCycles.consistency * 45;
+    if (naturalCycles.avgGain > 3) score += 10;
+    if (naturalCycles.avgGain > 8) score += 10;
+    if (naturalCycles.peaks.length >= 4) score += 10;
+    if (naturalCycles.avgCycleDays >= 10 && naturalCycles.avgCycleDays <= 60) score += 5;
   }
   return Math.min(Math.round(score), 99);
 }
@@ -767,7 +873,8 @@ function renderScanResult(ticker, { quote, candles, divs, cycles, naturalCycles,
     <div class="signal-box ${signal.type}">
       <div class="signal-label" style="color:${signal.type==='entry'?'var(--green)':signal.type==='exit'?'var(--red)':signal.type==='watch'?'var(--amber)':'var(--text3)'}">${signal.icon} ${signal.label}</div>
       <div class="signal-desc">${signal.desc}</div>
-    </div>`;
+    </div>
+    ${buildPositionRiskPanel(ticker, quote, naturalCycles, hasDivs)}`;
 
   // Natural cycle section
   if (naturalCycles && naturalCycles.consistency > 0.3) {
@@ -1005,6 +1112,568 @@ function fmtUSD(n){ if(n==null||isNaN(n))return'—'; return'$'+fmt(n); }
 function fmtPct(n){ if(n==null||isNaN(n))return'—'; return(n>=0?'+':'')+fmt(n)+'%'; }
 function daysUntil(s){ if(!s)return null; return Math.ceil((new Date(s)-new Date())/86400000); }
 function maSimple(arr,period){ if(!arr||arr.length<period)return null; const sl=arr.slice(-period); return sl.reduce((a,b)=>a+b,0)/period; }
+
+// ════════════════════════════════════════════════════════
+// RISK PROFILE
+// ════════════════════════════════════════════════════════
+let riskProfile = localStorage.getItem('mr_risk_profile') || 'cash';
+let pendingProfile = riskProfile;
+
+const RISK_PROFILES = {
+  cash: { label:'Cash Only — No Leverage', color:'var(--green)', icon:'🛡' },
+  some: { label:'Some Margin — Controlled', color:'var(--amber)', icon:'⚡' },
+  leverage: { label:'Active Leverage / Options', color:'var(--red)', icon:'⚠' },
+};
+
+function applyRiskProfile() {
+  const p = RISK_PROFILES[riskProfile];
+  const el = document.getElementById('risk-profile-display');
+  if (el) { el.textContent = p.label; el.style.color = p.color; }
+}
+
+function openRiskModal() {
+  pendingProfile = riskProfile;
+  document.querySelectorAll('.profile-option').forEach(o=>o.classList.remove('selected'));
+  document.getElementById('opt-'+riskProfile)?.classList.add('selected');
+  document.getElementById('risk-modal').style.display='flex';
+}
+
+function selectProfile(p) {
+  pendingProfile = p;
+  document.querySelectorAll('.profile-option').forEach(o=>o.classList.remove('selected'));
+  document.getElementById('opt-'+p)?.classList.add('selected');
+}
+
+function saveProfile() {
+  riskProfile = pendingProfile;
+  localStorage.setItem('mr_risk_profile', riskProfile);
+  applyRiskProfile();
+  document.getElementById('risk-modal').style.display='none';
+}
+
+function buildPositionRiskPanel(ticker, quote, naturalCycles, hasDivs) {
+  const p = riskProfile;
+  const flags = [];
+
+  if (p === 'cash') {
+    flags.push({ type:'safe', text:'Cash-only position: maximum direct loss limited to capital invested. No margin call risk.' });
+  } else if (p === 'some') {
+    flags.push({ type:'warn', text:'Margin positions can result in losses exceeding capital invested. Monitor position sizing carefully.' });
+  } else {
+    flags.push({ type:'warn', text:'Leveraged positions carry loss potential beyond capital invested. Strict risk management required.' });
+  }
+
+  const incomeEtfs = ['KSLV','KGLD','JEPI','QYLD','RYLD','XYLD','AGNC','MAIN','O','SCHD'];
+  if (incomeEtfs.includes(ticker)) {
+    flags.push({ type:'warn', text:'Income/covered-call ETF: high yield may include Return of Capital (ROC). Verify distribution composition — yield can mask NAV erosion.' });
+  }
+
+  if (naturalCycles && naturalCycles.avgDrop && naturalCycles.avgDrop > 8) {
+    flags.push({ type:'info', text:'Historical peak-to-trough drawdown averages ' + fmt(naturalCycles.avgDrop) + '%. Even without leverage, this volatility can be psychologically difficult to hold through.' });
+  }
+
+  const maxLossColor = p === 'cash' ? 'var(--green)' : 'var(--red)';
+  const maxLossVal   = p === 'cash' ? 'Capital Invested' : 'Exceeds Capital';
+  const maxLossSub   = p === 'cash' ? 'no margin call risk' : 'leverage amplifies loss';
+  const liqColor     = p === 'cash' ? 'var(--green)' : 'var(--amber)';
+  const liqVal       = p === 'cash' ? 'None' : 'Possible';
+  const liqSub       = p === 'cash' ? 'cash only — no broker call' : 'margin call risk exists';
+  const gainVal      = naturalCycles && naturalCycles.avgGain ? '+' + fmt(naturalCycles.avgGain) + '%' : '—';
+  const dropVal      = naturalCycles && naturalCycles.avgDrop ? '-' + fmt(naturalCycles.avgDrop) + '%' : '—';
+
+  let flagsHTML = '';
+  flags.forEach(function(f) {
+    const icon = f.type === 'safe' ? '✓' : f.type === 'warn' ? '⚠' : 'ℹ';
+    flagsHTML += '<div class="pos-risk-flag ' + f.type + '"><span>' + icon + '</span><span>' + f.text + '</span></div>';
+  });
+
+  return '<div class="pos-risk-panel">'
+    + '<div class="pos-risk-title">Position Risk Assessment</div>'
+    + '<div class="pos-risk-grid">'
+    + '<div class="pos-risk-item"><div class="pos-risk-item-label">Max Direct Loss</div><div class="pos-risk-item-value" style="color:' + maxLossColor + '">' + maxLossVal + '</div><div class="pos-risk-item-sub">' + maxLossSub + '</div></div>'
+    + '<div class="pos-risk-item"><div class="pos-risk-item-label">Forced Liquidation</div><div class="pos-risk-item-value" style="color:' + liqColor + '">' + liqVal + '</div><div class="pos-risk-item-sub">' + liqSub + '</div></div>'
+    + '<div class="pos-risk-item"><div class="pos-risk-item-label">Avg Wave Gain</div><div class="pos-risk-item-value" style="color:var(--green)">' + gainVal + '</div><div class="pos-risk-item-sub">trough to peak</div></div>'
+    + '<div class="pos-risk-item"><div class="pos-risk-item-label">Avg Wave Drop</div><div class="pos-risk-item-value" style="color:var(--red)">' + dropVal + '</div><div class="pos-risk-item-sub">peak to trough</div></div>'
+    + '</div>'
+    + flagsHTML
+    + '<div class="survivor-quote"><em>Compounding only works if you stay solvent and emotionally stable long enough to continue participating.</em></div>'
+    + '</div>';
+}
+
+// ════════════════════════════════════════════════════════
+// RHYTHM TRACKER (Portfolio tab)
+// ════════════════════════════════════════════════════════
+async function loadRhythm(ticker) {
+  document.getElementById('rhythm-loading').style.display='block';
+  document.getElementById('rhythm-loading').textContent=`⟳ LOADING ${ticker} RHYTHM DATA…`;
+  document.getElementById('rhythm-content').style.display='none';
+  if (rhythmCache[ticker]) { renderRhythm(ticker, rhythmCache[ticker].cycles, rhythmCache[ticker].exDivDates); return; }
+  const [candleRes, divRes] = await Promise.allSettled([finnhubCandles(ticker,365), finnhubDividends(ticker)]);
+  const candles = candleRes.status==='fulfilled'?candleRes.value:null;
+  const apiDivs = divRes.status==='fulfilled'?divRes.value:[];
+  const allDivs = [...new Set([...apiDivs,...(RHYTHM_ETF_DIVS[ticker]||[])])].sort().reverse();
+  if (!candles) { document.getElementById('rhythm-loading').textContent='Unable to load price history — check API key or try again.'; return; }
+  const cycles = analyzeCycles(candles.map, allDivs);
+  rhythmCache[ticker] = { cycles, exDivDates:allDivs };
+  renderRhythm(ticker, cycles, allDivs);
+}
+
+function switchRhythm(ticker, btn) {
+  rhythmTicker=ticker;
+  document.querySelectorAll('.rhythm-etf-tab').forEach(t=>{ t.style.borderColor=''; t.style.color=''; });
+  btn.style.borderColor='var(--gold)'; btn.style.color='var(--gold)';
+  loadRhythm(ticker);
+}
+
+// ════════════════════════════════════════════════════════
+// UNIVERSAL SCANNER TAB
+// ════════════════════════════════════════════════════════
+function renderFavorites() {
+  const wrap = document.getElementById('fav-chips');
+  const section = document.getElementById('fav-section');
+  if (!favorites.length) {
+    wrap.innerHTML = '<span class="fav-add-hint">Search a ticker and save it as a favorite to see it here.</span>';
+    return;
+  }
+  wrap.innerHTML = favorites.map(f=>`
+    <div class="fav-chip" onclick="loadFavorite('${f}')">
+      <span class="fav-chip-text">${f}</span>
+      <span class="fav-chip-remove" onclick="removeFavorite(event,'${f}')">×</span>
+    </div>`).join('');
+}
+
+function loadFavorite(ticker) {
+  document.getElementById('scanner-input').value = ticker;
+  runScan();
+}
+
+function removeFavorite(e, ticker) {
+  e.stopPropagation();
+  favorites = favorites.filter(f=>f!==ticker);
+  localStorage.setItem('mr_favorites', JSON.stringify(favorites));
+  renderFavorites();
+}
+
+function saveFavorite(ticker) {
+  if (!favorites.includes(ticker)) {
+    favorites.push(ticker);
+    localStorage.setItem('mr_favorites', JSON.stringify(favorites));
+    renderFavorites();
+  }
+}
+
+async function runScan() {
+  const raw = document.getElementById('scanner-input').value.trim().toUpperCase();
+  if (!raw) return;
+  const ticker = raw;
+  const btn = document.getElementById('scan-btn');
+  btn.disabled=true; btn.textContent='SCANNING…';
+  document.getElementById('scanner-area').innerHTML = `<div class="scanner-loading"><span class="spin">⟳</span> ANALYZING ${ticker}…</div>`;
+
+  // Check cache
+  if (scanCache[ticker]) {
+    renderScanResult(ticker, scanCache[ticker]);
+    btn.disabled=false; btn.textContent='SCAN';
+    return;
+  }
+
+  const [quoteRes, candleRes, divRes, nameRes] = await Promise.allSettled([
+    finnhubQuote(ticker),
+    finnhubCandles(ticker, 365),
+    finnhubDividends(ticker),
+    finnhubProfile(ticker),
+  ]);
+
+  const quote   = quoteRes.status==='fulfilled'   ? quoteRes.value   : null;
+  const candles = candleRes.status==='fulfilled'  ? candleRes.value  : null;
+  const divs    = divRes.status==='fulfilled'     ? divRes.value     : [];
+  const name    = nameRes.status==='fulfilled'    ? nameRes.value    : ticker;
+
+  if (!quote && !candles) {
+    document.getElementById('scanner-area').innerHTML = `<div class="scanner-loading" style="color:var(--red)">Could not find data for "${ticker}". Check the ticker symbol and try again.</div>`;
+    btn.disabled=false; btn.textContent='SCAN';
+    return;
+  }
+
+  const cycles = candles ? analyzeCycles(candles.map, divs) : [];
+  const naturalCycles = candles ? findNaturalCycles(candles.closes) : null;
+  const result = { quote, candles, divs, cycles, naturalCycles, name };
+  scanCache[ticker] = result;
+  renderScanResult(ticker, result);
+  btn.disabled=false; btn.textContent='SCAN';
+}
+
+function findNaturalCycles(closes) {
+  if (!closes || closes.length < 20) return null;
+  const win = 3;
+  const peaks = [], troughs = [];
+  for (let i=win; i<closes.length-win; i++) {
+    const slice = closes.slice(i-win, i+win+1);
+    const max = Math.max(...slice), min = Math.min(...slice);
+    if (closes[i] >= max * 0.999) peaks.push(i);
+    if (closes[i] <= min * 1.001) troughs.push(i);
+  }
+  const dedupe = (arr, closes, keepMax) => {
+    const out = [];
+    let i = 0;
+    while (i < arr.length) {
+      let j = i;
+      while (j+1 < arr.length && arr[j+1] - arr[j] <= win*2) j++;
+      const group = arr.slice(i, j+1);
+      if (keepMax) out.push(group.reduce((a,b) => closes[a]>=closes[b]?a:b));
+      else out.push(group.reduce((a,b) => closes[a]<=closes[b]?a:b));
+      i = j+1;
+    }
+    return out;
+  };
+  const cleanPeaks = dedupe(peaks, closes, true);
+  const cleanTroughs = dedupe(troughs, closes, false);
+  if (cleanPeaks.length < 2 || cleanTroughs.length < 2) return null;
+  const peakGaps = cleanPeaks.slice(1).map((p,i)=>p-cleanPeaks[i]);
+  const avgCycle = peakGaps.reduce((a,b)=>a+b,0)/peakGaps.length;
+  const consistency = peakGaps.filter(g=>Math.abs(g-avgCycle)<avgCycle*0.55).length / peakGaps.length;
+  const lastTrough = cleanTroughs[cleanTroughs.length-1];
+  const lastPeak   = cleanPeaks[cleanPeaks.length-1];
+  const daysSinceLastTrough = closes.length - 1 - lastTrough;
+  const daysSinceLastPeak   = closes.length - 1 - lastPeak;
+  const troughToPeakGains = cleanTroughs.slice(0,-1).map(t => {
+    const nextPeak = cleanPeaks.find(p=>p>t);
+    if (!nextPeak) return null;
+    return ((closes[nextPeak]-closes[t])/closes[t])*100;
+  }).filter(v=>v!==null&&!isNaN(v));
+  const avgGain = troughToPeakGains.length ? troughToPeakGains.reduce((a,b)=>a+b,0)/troughToPeakGains.length : null;
+  const peakToTroughDrops = cleanPeaks.slice(0,-1).map(p => {
+    const nextTrough = cleanTroughs.find(t=>t>p);
+    if (!nextTrough) return null;
+    return ((closes[p]-closes[nextTrough])/closes[p])*100;
+  }).filter(v=>v!==null&&!isNaN(v));
+  const avgDrop = peakToTroughDrops.length ? peakToTroughDrops.reduce((a,b)=>a+b,0)/peakToTroughDrops.length : null;
+  return { avgCycleDays:Math.round(avgCycle), consistency, peaks:cleanPeaks, troughs:cleanTroughs, lastTrough, lastPeak, daysSinceLastTrough, daysSinceLastPeak, avgGain, avgDrop, troughToPeakGains };
+}
+
+function waveScore(cycles, naturalCycles, hasDivs) {
+  let score = 0;
+  if (hasDivs && cycles.length >= 3) {
+    const preBull = cycles.filter(c=>c.preMove>0).length/cycles.length;
+    const postBear = cycles.filter(c=>c.postMove<0).length/cycles.length;
+    score += preBull * 40 + postBear * 20;
+  }
+  if (naturalCycles) {
+    score += naturalCycles.consistency * 45;
+    if (naturalCycles.avgGain > 3) score += 10;
+    if (naturalCycles.avgGain > 8) score += 10;
+    if (naturalCycles.peaks.length >= 4) score += 10;
+    if (naturalCycles.avgCycleDays >= 10 && naturalCycles.avgCycleDays <= 60) score += 5;
+  }
+  return Math.min(Math.round(score), 99);
+}
+
+function entryExitSignal(cycles, naturalCycles, hasDivs, divDates) {
+  // Check dividend window first
+  if (hasDivs && divDates.length) {
+    const status = currentWindowStatus(divDates);
+    if (status.type==='post-div' && status.days <= 3) return { type:'entry', icon:'⚡', label:'POTENTIAL ENTRY WINDOW', desc:`${status.days} day${status.days!==1?'s':''} after ex-dividend. Historical post-div sellers may be flushing out — watch for a floor forming.` };
+    if (status.type==='pre-div' && status.days <= 4) return { type:'watch', icon:'⚠', label:'PRE-DIVIDEND WINDOW', desc:`${status.days} day${status.days!==1?'s':''} before ex-date. Pre-div runup may be in progress. Exit before ex-date or hold for dividend — not both.` };
+    if (status.type==='post-div') return { type:'watch', icon:'◉', label:'POST-DIV DRIFT ZONE', desc:`${status.days} days after ex-date. Price may still be settling. Wait for stabilization before new entry.` };
+  }
+  // Natural cycle signal
+  if (naturalCycles) {
+    const { avgCycleDays, daysSinceLastTrough, daysSinceLastPeak, consistency } = naturalCycles;
+    if (consistency > 0.5) {
+      const cycleProgress = (daysSinceLastTrough % avgCycleDays) / avgCycleDays;
+      if (cycleProgress < 0.25) return { type:'entry', icon:'⚡', label:'NEAR CYCLE LOW', desc:`Price is in the early phase of a ~${avgCycleDays}-day natural cycle. Historical troughs have been followed by an avg gain of ${fmt(naturalCycles.avgGain)}%.` };
+      if (cycleProgress > 0.65 && cycleProgress < 0.85) return { type:'exit', icon:'⚠', label:'APPROACHING CYCLE PEAK', desc:`Cycle suggests price may be approaching a peak zone in the ~${avgCycleDays}-day rhythm. Consider tightening stops or planning exit.` };
+      if (cycleProgress >= 0.85) return { type:'watch', icon:'◉', label:'LATE CYCLE — CAUTION', desc:`Near the top of the estimated cycle. Risk/reward may be unfavorable for new entries here.` };
+    }
+  }
+  return { type:'neutral', icon:'◉', label:'NO CLEAR SIGNAL', desc:'No strong entry or exit signal detected in the current position within this ticker\'s rhythm. Continue monitoring.' };
+}
+
+function renderScanResult(ticker, { quote, candles, divs, cycles, naturalCycles, name }) {
+  const hasDivs = divs && divs.length > 0;
+  const score = waveScore(cycles, naturalCycles, hasDivs);
+  const signal = entryExitSignal(cycles, naturalCycles, hasDivs, divs);
+  const isFav = favorites.includes(ticker);
+  const scoreColor = score>=70?'var(--green)':score>=40?'var(--amber)':'var(--red)';
+  const avgPre  = cycles.length ? cycles.reduce((s,c)=>s+c.preMove,0)/cycles.length : null;
+  const avgPost = cycles.length ? cycles.reduce((s,c)=>s+c.postMove,0)/cycles.length : null;
+
+  let html = `<div class="scanner-result">
+    <div class="result-header">
+      <div>
+        <div class="result-ticker">${ticker}</div>
+        <div class="result-name">${name}</div>
+      </div>
+      <div class="result-price-wrap">
+        <div class="result-price">${quote?fmtUSD(quote.price):'—'}</div>
+        ${quote?`<div class="result-change ${quote.changePct>=0?'up':'down'}">${fmtPct(quote.changePct)} (${fmtUSD(Math.abs(quote.change))})</div>`:''}
+      </div>
+    </div>
+
+    <div class="result-actions">
+      <button class="save-fav-btn ${isFav?'saved':''}" id="fav-btn-${ticker}" onclick="toggleFav('${ticker}')">
+        ${isFav?'★ Saved':'☆ Save Favorite'}
+      </button>
+    </div>
+
+    <!-- WAVE SCORE -->
+    <div class="wave-score-wrap">
+      <div>
+        <div class="wave-score-label">Wave Score</div>
+        <div class="wave-score-num" style="color:${scoreColor}">${score}</div>
+      </div>
+      <div class="wave-bar-wrap">
+        <div class="wave-score-label">Rhythm Strength</div>
+        <div class="wave-score-desc">${score>=70?'Strong, consistent rhythm detected':score>=40?'Moderate pattern — use with caution':'Weak or irregular — difficult to time'}</div>
+        <div class="wave-bar-track"><div class="wave-bar-fill" style="width:${score}%;background:${scoreColor}"></div></div>
+      </div>
+    </div>
+
+    <!-- SIGNAL -->
+    <div class="signal-box ${signal.type}">
+      <div class="signal-label" style="color:${signal.type==='entry'?'var(--green)':signal.type==='exit'?'var(--red)':signal.type==='watch'?'var(--amber)':'var(--text3)'}">${signal.icon} ${signal.label}</div>
+      <div class="signal-desc">${signal.desc}</div>
+    </div>
+    ${buildPositionRiskPanel(ticker, quote, naturalCycles, hasDivs)}`;
+
+  // Natural cycle section
+  if (naturalCycles && naturalCycles.consistency > 0.3) {
+    html += `
+    <div style="margin-bottom:14px">
+      <div class="rhythm-chart-label">Natural Price Cycle</div>
+      <div class="rhythm-stats">
+        <div class="rhythm-stat">
+          <div class="rhythm-stat-label">Avg Cycle</div>
+          <div class="rhythm-stat-value" style="color:var(--blue)">${naturalCycles.avgCycleDays}d</div>
+          <div class="rhythm-stat-sub">peak to peak</div>
+        </div>
+        <div class="rhythm-stat">
+          <div class="rhythm-stat-label">Consistency</div>
+          <div class="rhythm-stat-value" style="color:${naturalCycles.consistency>0.6?'var(--green)':'var(--amber)'}">${Math.round(naturalCycles.consistency*100)}%</div>
+          <div class="rhythm-stat-sub">cycle regularity</div>
+        </div>
+        <div class="rhythm-stat">
+          <div class="rhythm-stat-label">Avg Wave Gain</div>
+          <div class="rhythm-stat-value" style="color:var(--green)">${naturalCycles.avgGain?'+'+fmt(naturalCycles.avgGain)+'%':'—'}</div>
+          <div class="rhythm-stat-sub">trough → peak</div>
+        </div>
+        <div class="rhythm-stat">
+          <div class="rhythm-stat-label">Since Last Low</div>
+          <div class="rhythm-stat-value" style="color:var(--amber)">${naturalCycles.daysSinceLastTrough}d</div>
+          <div class="rhythm-stat-sub">days ago</div>
+        </div>
+      </div>
+      ${candles?`<div style="margin-bottom:6px">${drawNaturalCycleChart(candles.closes, naturalCycles)}</div>`:''}
+    </div>`;
+  }
+
+  // Dividend rhythm section
+  if (hasDivs && cycles.length >= 2) {
+    const preBull = cycles.filter(c=>c.preMove>0).length;
+    const postBear = cycles.filter(c=>c.postMove<0).length;
+    html += `
+    <div style="margin-bottom:14px">
+      <div class="rhythm-chart-label">Dividend Rhythm (${cycles.length} cycles)</div>
+      <div class="rhythm-stats">
+        <div class="rhythm-stat"><div class="rhythm-stat-label">Avg Pre-Div</div><div class="rhythm-stat-value" style="color:${avgPre>=0?'var(--green)':'var(--red)'}">${avgPre!=null?(avgPre>=0?'+':'')+fmt(avgPre)+'%':'—'}</div><div class="rhythm-stat-sub">7d before</div></div>
+        <div class="rhythm-stat"><div class="rhythm-stat-label">Avg Post-Div</div><div class="rhythm-stat-value" style="color:${avgPost>=0?'var(--green)':'var(--red)'}">${avgPost!=null?(avgPost>=0?'+':'')+fmt(avgPost)+'%':'—'}</div><div class="rhythm-stat-sub">7d after</div></div>
+        <div class="rhythm-stat"><div class="rhythm-stat-label">Pre-Div Up</div><div class="rhythm-stat-value" style="color:var(--amber)">${Math.round(preBull/cycles.length*100)}%</div><div class="rhythm-stat-sub">of cycles</div></div>
+        <div class="rhythm-stat"><div class="rhythm-stat-label">Post-Div Down</div><div class="rhythm-stat-value" style="color:var(--amber)">${Math.round(postBear/cycles.length*100)}%</div><div class="rhythm-stat-sub">of cycles</div></div>
+      </div>
+      ${cycles.length?`<div>${drawRhythmBars(cycles)}</div>`:''}
+      <table class="cycle-table" style="margin-top:10px">
+        <thead><tr><th>Ex-Date</th><th>Pre 7d</th><th>Ex-Day</th><th>Post 7d</th></tr></thead>
+        <tbody>${cycles.slice(0,6).map(c=>`<tr>
+          <td>${c.exDate}</td>
+          <td class="${c.preMove>=0?'pos':'neg'}">${c.preMove>=0?'+':''}${fmt(c.preMove)}%</td>
+          <td class="${c.exDrop>=0?'pos':'neg'}">${c.exDrop>=0?'+':''}${fmt(c.exDrop)}%</td>
+          <td class="${c.postMove>=0?'pos':'neg'}">${c.postMove>=0?'+':''}${fmt(c.postMove)}%</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+  } else if (!hasDivs) {
+    html += `<div style="font-family:var(--mono);font-size:10px;color:var(--text3);border:1px solid var(--border);border-radius:4px;padding:10px 12px;margin-bottom:14px">No dividend history found — pattern analysis based on natural price cycles only.</div>`;
+  }
+
+  // Insight
+  html += `<div class="rhythm-insight">
+    <div class="rhythm-insight-label">Pattern Intelligence — ${ticker}</div>
+    <p>${score>=70?`<span class="insight-hl" style="color:var(--green)">Strong rhythm detected.</span> This ticker shows consistent, repeatable price cycles that may be usable for timing entries and exits.`:score>=40?`<span class="insight-hl" style="color:var(--amber)">Moderate rhythm detected.</span> Some consistency in price cycles, but macro events can override the pattern. Use in combination with other signals.`:`<span class="insight-hl" style="color:var(--red)">Weak rhythm.</span> Price behavior appears irregular or driven more by external events than internal cycles. Difficult to time reliably.`}</p>
+    ${naturalCycles&&naturalCycles.avgGain?`<p>Historical wave gains from trough to peak average <span class="insight-hl" style="color:var(--green)">+${fmt(naturalCycles.avgGain)}%</span> over a ~${naturalCycles.avgCycleDays}-day cycle. Riding full waves rather than capturing dividends may offer better returns.</p>`:''}
+  </div>
+  </div>`;
+
+  document.getElementById('scanner-area').innerHTML = html;
+}
+
+function toggleFav(ticker) {
+  if (favorites.includes(ticker)) {
+    removeFavorite({stopPropagation:()=>{}}, ticker);
+    const btn = document.getElementById(`fav-btn-${ticker}`);
+    if(btn){btn.textContent='☆ Save Favorite';btn.classList.remove('saved');}
+  } else {
+    saveFavorite(ticker);
+    const btn = document.getElementById(`fav-btn-${ticker}`);
+    if(btn){btn.textContent='★ Saved';btn.classList.add('saved');}
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// SHARED RHYTHM ANALYSIS
+// ════════════════════════════════════════════════════════
+function analyzeCycles(priceMap, exDivDates) {
+  const cycles = [];
+  if (!priceMap || !exDivDates?.length) return cycles;
+  exDivDates.forEach(exDateStr => {
+    const exDate = new Date(exDateStr);
+    const window = [];
+    for (let d=-WINDOW_DAYS; d<=WINDOW_DAYS; d++) {
+      const dt = new Date(exDate); dt.setDate(dt.getDate()+d);
+      const key = dt.toISOString().slice(0,10);
+      window.push({ day:d, date:key, price:priceMap[key]??null });
+    }
+    const preBefore = window.filter(w=>w.day<0&&w.price!==null);
+    const postAfter  = window.filter(w=>w.day>0&&w.price!==null);
+    const onExDate   = window.find(w=>w.day===0&&w.price!==null);
+    if (preBefore.length<2||postAfter.length<2) return;
+    const preStart=preBefore[0].price, preEnd=preBefore[preBefore.length-1].price;
+    const postStart=postAfter[0].price, postEnd=postAfter[postAfter.length-1].price;
+    const exPrice=onExDate?onExDate.price:preEnd;
+    cycles.push({
+      exDate:exDateStr,
+      preMove:((preEnd-preStart)/preStart)*100,
+      postMove:((postEnd-postStart)/postStart)*100,
+      exDrop:((exPrice-preEnd)/preEnd)*100,
+    });
+  });
+  return cycles;
+}
+
+function currentWindowStatus(exDivDates) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  for (const dateStr of exDivDates) {
+    const ex = new Date(dateStr); ex.setHours(0,0,0,0);
+    const diff = Math.round((today-ex)/86400000);
+    if (diff>=-WINDOW_DAYS&&diff<0) return {type:'pre-div',days:Math.abs(diff),exDate:dateStr,msg:`You are ${Math.abs(diff)} day${Math.abs(diff)!==1?'s':''} before ex-dividend date (${dateStr}). Pre-div runup window is active.`};
+    if (diff===0) return {type:'pre-div',days:0,exDate:dateStr,msg:`Today is the ex-dividend date (${dateStr}). Price adjustment typically occurs at open.`};
+    if (diff>0&&diff<=WINDOW_DAYS) return {type:'post-div',days:diff,exDate:dateStr,msg:`${diff} day${diff!==1?'s':''} after ex-dividend date (${dateStr}). Watch for post-div drift.`};
+  }
+  const upcoming = exDivDates.find(d=>new Date(d)>today);
+  if (upcoming) { const daysTo=Math.round((new Date(upcoming)-today)/86400000); return {type:'neutral',days:daysTo,exDate:upcoming,msg:`Next ex-dividend: ${upcoming} — ${daysTo} day${daysTo!==1?'s':''} away. Outside active rhythm window.`}; }
+  return {type:'neutral',days:null,exDate:null,msg:'No upcoming ex-dividend dates found.'};
+}
+
+function renderRhythm(ticker, cycles, exDivDates) {
+  const status = currentWindowStatus(exDivDates);
+  const avgPre  = cycles.length?cycles.reduce((s,c)=>s+c.preMove,0)/cycles.length:null;
+  const avgPost = cycles.length?cycles.reduce((s,c)=>s+c.postMove,0)/cycles.length:null;
+  const avgDrop = cycles.length?cycles.reduce((s,c)=>s+c.exDrop,0)/cycles.length:null;
+  const preBull = cycles.filter(c=>c.preMove>0).length;
+  const postBear = cycles.filter(c=>c.postMove<0).length;
+  const wc = status.type==='pre-div'?'pre-div':status.type==='post-div'?'post-div':'neutral-win';
+  const wColor = status.type==='pre-div'?'#fbbf24':status.type==='post-div'?'#f87171':'#555';
+  const wIcon  = status.type==='pre-div'?'⚡':status.type==='post-div'?'⚠':'◉';
+
+  document.getElementById('rhythm-content').innerHTML = `
+    <div class="rhythm-window ${wc}">
+      <div class="rhythm-window-label" style="color:${wColor}">${wIcon} ${status.type==='pre-div'?'PRE-DIVIDEND WINDOW ACTIVE':status.type==='post-div'?'POST-DIVIDEND WINDOW ACTIVE':'OUTSIDE ACTIVE WINDOW'}</div>
+      <div class="rhythm-window-desc">${status.msg}</div>
+    </div>
+    <div class="rhythm-stats">
+      <div class="rhythm-stat"><div class="rhythm-stat-label">Avg Pre-Div</div><div class="rhythm-stat-value" style="color:${avgPre>=0?'var(--green)':'var(--red)'}">${avgPre!=null?(avgPre>=0?'+':'')+fmt(avgPre)+'%':'—'}</div><div class="rhythm-stat-sub">${WINDOW_DAYS}d before</div></div>
+      <div class="rhythm-stat"><div class="rhythm-stat-label">Avg Ex-Drop</div><div class="rhythm-stat-value" style="color:${avgDrop>=0?'var(--green)':'var(--red)'}">${avgDrop!=null?(avgDrop>=0?'+':'')+fmt(avgDrop)+'%':'—'}</div><div class="rhythm-stat-sub">ex-date day</div></div>
+      <div class="rhythm-stat"><div class="rhythm-stat-label">Avg Post-Div</div><div class="rhythm-stat-value" style="color:${avgPost>=0?'var(--green)':'var(--red)'}">${avgPost!=null?(avgPost>=0?'+':'')+fmt(avgPost)+'%':'—'}</div><div class="rhythm-stat-sub">${WINDOW_DAYS}d after</div></div>
+      <div class="rhythm-stat"><div class="rhythm-stat-label">Pre-Div Up</div><div class="rhythm-stat-value" style="color:var(--amber)">${cycles.length?Math.round(preBull/cycles.length*100)+'%':'—'}</div><div class="rhythm-stat-sub">of cycles</div></div>
+    </div>
+    ${cycles.length?`<div class="rhythm-chart-label">Pre vs Post Per Cycle</div>${drawRhythmBars(cycles)}`:''}
+    ${cycles.length?`<table class="cycle-table"><thead><tr><th>Ex-Date</th><th>Pre ${WINDOW_DAYS}d</th><th>Ex-Day</th><th>Post ${WINDOW_DAYS}d</th></tr></thead><tbody>${cycles.slice(0,8).map(c=>`<tr><td>${c.exDate}</td><td class="${c.preMove>=0?'pos':'neg'}">${c.preMove>=0?'+':''}${fmt(c.preMove)}%</td><td class="${c.exDrop>=0?'pos':'neg'}">${c.exDrop>=0?'+':''}${fmt(c.exDrop)}%</td><td class="${c.postMove>=0?'pos':'neg'}">${c.postMove>=0?'+':''}${fmt(c.postMove)}%</td></tr>`).join('')}</tbody></table>`:'<div style="font-size:12px;color:var(--text3);font-style:italic;padding:8px 0">Insufficient history for cycle analysis.</div>'}
+    <div class="rhythm-insight"><div class="rhythm-insight-label">Pattern Intelligence</div>${cycles.length>=3?`<p>Across <span class="insight-hl" style="color:var(--gold)">${cycles.length} cycles</span>, pre-div runup occurred in <span class="insight-hl" style="color:var(--green)">${preBull} of ${cycles.length}</span> and post-div decline in <span class="insight-hl" style="color:var(--red)">${postBear} of ${cycles.length}</span> cases.</p><p>${avgPre>0.3?`Avg pre-div drift of <span class="insight-hl" style="color:var(--amber)">${fmt(avgPre)}%</span> suggests an accumulation window exists before each ex-date.`:'Pre-div movement has been modest.'} ${avgPost<-0.3?`Post-div selling averages <span class="insight-hl" style="color:var(--red)">${fmt(Math.abs(avgPost))}%</span> — sizing discipline is critical.`:'Post-div drift has been relatively contained.'}</p>`:'<p>Not enough completed cycles to establish a reliable pattern yet.</p>'}</div>`;
+
+  document.getElementById('rhythm-loading').style.display='none';
+  document.getElementById('rhythm-content').style.display='block';
+}
+
+// ════════════════════════════════════════════════════════
+// CHARTS
+// ════════════════════════════════════════════════════════
+function drawRhythmBars(cycles) {
+  const W=500, H=70, pad=20;
+  const allVals=[...cycles.map(c=>c.preMove),...cycles.map(c=>c.postMove)];
+  const minV=Math.min(...allVals), maxV=Math.max(...allVals);
+  const range=maxV-minV||1;
+  const barW=Math.max(6,Math.floor((W-pad*2)/(cycles.length*3)));
+  let bars='';
+  cycles.forEach((c,i)=>{
+    const x1=pad+i*(barW*2+barW*0.5);
+    const x2=x1+barW+4;
+    const preH=Math.max(2,Math.abs(c.preMove/range)*(H-10));
+    const preY=c.preMove>=0?H/2-preH:H/2;
+    const postH=Math.max(2,Math.abs(c.postMove/range)*(H-10));
+    const postY=c.postMove>=0?H/2-postH:H/2;
+    bars+=`<rect x="${x1}" y="${preY}" width="${barW}" height="${preH}" fill="${c.preMove>=0?'#4ade80':'#f87171'}" opacity="0.8" rx="1"/>`;
+    bars+=`<rect x="${x2}" y="${postY}" width="${barW}" height="${postH}" fill="${c.postMove>=0?'#4ade80':'#f87171'}" opacity="0.4" rx="1"/>`;
+    bars+=`<text x="${x1+barW}" y="${H+11}" font-size="7" fill="#333" font-family="monospace" text-anchor="middle">${c.exDate.slice(5)}</text>`;
+  });
+  return `<svg width="100%" viewBox="0 0 ${W} ${H+14}" style="display:block;margin-bottom:12px;overflow:visible">
+    <line x1="${pad}" y1="${H/2}" x2="${W-pad}" y2="${H/2}" stroke="#222" stroke-width="1"/>
+    ${bars}
+    <text x="4" y="${H/2-2}" font-size="7" fill="#333" font-family="monospace">+</text>
+    <text x="4" y="${H/2+10}" font-size="7" fill="#333" font-family="monospace">−</text>
+  </svg>`;
+}
+
+function drawNaturalCycleChart(closes, nc) {
+  if (!closes||closes.length<2) return '';
+  const W=500, H=70, pad=4;
+  const min=Math.min(...closes), max=Math.max(...closes), range=max-min||1;
+  const pts=closes.map((v,i)=>{
+    const x=pad+(i/(closes.length-1))*(W-pad*2);
+    const y=H-((v-min)/range)*(H-6)-3;
+    return `${x},${y}`;
+  }).join(' ');
+  // Mark peaks and troughs
+  let markers='';
+  nc.peaks.forEach(i=>{
+    const x=pad+(i/(closes.length-1))*(W-pad*2);
+    const y=H-((closes[i]-min)/range)*(H-6)-3;
+    markers+=`<circle cx="${x}" cy="${y}" r="3" fill="none" stroke="#f87171" stroke-width="1.5" opacity="0.7"/>`;
+  });
+  nc.troughs.forEach(i=>{
+    const x=pad+(i/(closes.length-1))*(W-pad*2);
+    const y=H-((closes[i]-min)/range)*(H-6)-3;
+    markers+=`<circle cx="${x}" cy="${y}" r="3" fill="none" stroke="#4ade80" stroke-width="1.5" opacity="0.7"/>`;
+  });
+  const isUp=closes[closes.length-1]>=closes[0];
+  return `<svg width="100%" viewBox="0 0 ${W} ${H+8}" style="display:block;margin-bottom:4px">
+    <polyline points="${pts}" fill="none" stroke="${isUp?'#4ade80':'#f87171'}" stroke-width="1.5" stroke-linejoin="round"/>
+    ${markers}
+    <text x="4" y="${H+7}" font-size="7" fill="#333" font-family="monospace">● peaks  ● troughs</text>
+  </svg>`;
+}
+
+function drawSparkline(id, data) {
+  const svg=document.getElementById(id);
+  if (!svg||!data||data.length<2) return;
+  const W=300,H=40,min=Math.min(...data),max=Math.max(...data),range=max-min||1;
+  const pts=data.map((v,i)=>`${(i/(data.length-1))*W},${H-((v-min)/range)*(H-4)-2}`).join(' ');
+  const isUp=data[data.length-1]>=data[0];
+  const lc=isUp?'#4ade80':'#f87171';
+  const gid=`g${id.replace(/[^a-z0-9]/gi,'')}`;
+  svg.innerHTML=`<defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${lc}" stop-opacity="0.18"/><stop offset="100%" stop-color="${lc}" stop-opacity="0"/></linearGradient></defs>
+    <polygon points="0,${H} ${pts} ${W},${H}" fill="url(#${gid})"/>
+    <polyline points="${pts}" fill="none" stroke="${lc}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+}
+
+// ════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════
+function fmt(n,d=2){ if(n==null||isNaN(n))return'—'; return n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function fmtUSD(n){ if(n==null||isNaN(n))return'—'; return'$'+fmt(n); }
+function fmtPct(n){ if(n==null||isNaN(n))return'—'; return(n>=0?'+':'')+fmt(n)+'%'; }
+function daysUntil(s){ if(!s)return null; return Math.ceil((new Date(s)-new Date())/86400000); }
+function maSimple(arr,period){ if(!arr||arr.length<period)return null; const sl=arr.slice(-period); return sl.reduce((a,b)=>a+b,0)/period; }
+
+
 </script>
 </body>
 </html>
