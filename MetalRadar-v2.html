@@ -248,6 +248,92 @@ body::before {
   .pos-risk-flag.safe { background:rgba(74,222,128,0.05); border:1px solid rgba(74,222,128,0.2); color:var(--green); }
   .pos-risk-flag.info { background:rgba(96,165,250,0.05); border:1px solid rgba(96,165,250,0.2); color:var(--blue); }
   .survivor-quote { font-family:var(--serif); font-style:italic; font-size:11px; color:var(--text3); border-left:2px solid var(--gold); padding-left:10px; margin-top:10px; line-height:1.6; }
+
+  /* ── TRADE JOURNAL ── */
+  .journal-form { display:flex; flex-direction:column; gap:10px; }
+  .jf-row { display:flex; gap:10px; }
+  .jf-group { display:flex; flex-direction:column; flex:1; }
+  .jf-label { font-family:var(--mono); font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:5px; }
+  .jf-input { background:var(--bg); border:1px solid var(--border2); color:var(--text); font-family:var(--mono); font-size:13px; padding:10px 12px; border-radius:4px; outline:none; transition:border-color 0.2s; width:100%; }
+  .jf-input:focus { border-color:var(--gold); }
+  .journal-log-btn { background:var(--gold); border:none; color:#000; font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.18em; padding:12px; border-radius:4px; cursor:pointer; margin-top:4px; transition:opacity 0.2s; }
+  .journal-log-btn:hover { opacity:0.85; }
+
+  /* TRADE ROW */
+  .trade-row { border:1px solid var(--border); border-radius:5px; padding:12px 14px; margin-bottom:8px; }
+  .trade-row.buy-row { border-left:3px solid var(--green); }
+  .trade-row.sell-row { border-left:3px solid var(--red); }
+  .trade-row-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+  .trade-row-left { display:flex; align-items:center; gap:8px; }
+  .trade-action-badge { font-family:var(--mono); font-size:9px; font-weight:700; padding:2px 8px; border-radius:3px; letter-spacing:0.1em; }
+  .badge-buy { background:rgba(74,222,128,0.12); color:var(--green); border:1px solid rgba(74,222,128,0.3); }
+  .badge-sell { background:rgba(248,113,113,0.12); color:var(--red); border:1px solid rgba(248,113,113,0.3); }
+  .trade-ticker-label { font-family:var(--mono); font-size:14px; font-weight:700; }
+  .trade-date-label { font-family:var(--mono); font-size:10px; color:var(--text3); }
+  .trade-price-label { font-family:var(--mono); font-size:16px; font-weight:700; text-align:right; }
+  .trade-shares-label { font-family:var(--mono); font-size:10px; color:var(--text3); text-align:right; }
+  .trade-notes { font-size:11px; color:var(--text3); font-style:italic; margin-top:4px; }
+  .trade-delete { background:transparent; border:none; color:var(--text3); cursor:pointer; font-size:14px; padding:0 4px; }
+  .trade-delete:hover { color:var(--red); }
+  .trade-total { font-family:var(--mono); font-size:11px; color:var(--text2); margin-top:4px; }
+
+  /* CYCLE ANALYSIS */
+  .cycle-card { background:var(--bg); border:1px solid var(--border); border-radius:5px; padding:14px; margin-bottom:10px; }
+  .cycle-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .cycle-ticker-name { font-family:var(--mono); font-size:14px; font-weight:700; letter-spacing:0.08em; }
+  .cycle-result { font-family:var(--mono); font-size:18px; font-weight:700; }
+  .cycle-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
+  .cycle-stat-item { background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:8px 10px; }
+  .cycle-stat-label { font-family:var(--mono); font-size:8px; color:var(--text3); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:3px; }
+  .cycle-stat-val { font-family:var(--mono); font-size:13px; font-weight:700; }
+  .timing-feedback { border-radius:4px; padding:9px 12px; font-size:11px; line-height:1.55; }
+  .timing-feedback.early { background:rgba(251,191,36,0.06); border:1px solid rgba(251,191,36,0.25); color:var(--amber); }
+  .timing-feedback.late { background:rgba(248,113,113,0.06); border:1px solid rgba(248,113,113,0.25); color:var(--red); }
+  .timing-feedback.good { background:rgba(74,222,128,0.06); border:1px solid rgba(74,222,128,0.25); color:var(--green); }
+  .timing-feedback.info { background:rgba(96,165,250,0.06); border:1px solid rgba(96,165,250,0.25); color:var(--blue); }
+
+  /* HABIT SUMMARY */
+  .habit-box { background:var(--bg); border:1px solid var(--border); border-radius:5px; padding:14px; margin-bottom:10px; }
+  .habit-box-label { font-family:var(--mono); font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:8px; }
+  .habit-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border); font-size:12px; }
+  .habit-row:last-child { border-bottom:none; }
+  .habit-label { color:var(--text3); font-style:italic; }
+  .habit-val { font-family:var(--mono); font-weight:700; }
+
+  /* ── TARGET PRICE PANEL ── */
+  .target-panel { background:var(--bg); border:1px solid var(--border); border-radius:5px; padding:14px; margin-bottom:10px; }
+  .target-panel-label { font-family:var(--mono); font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:10px; }
+  .target-row { display:flex; gap:8px; align-items:flex-end; margin-bottom:8px; flex-wrap:wrap; }
+  .target-input-group { display:flex; flex-direction:column; flex:1; min-width:80px; }
+  .target-input-label { font-family:var(--mono); font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px; }
+  .target-input { background:var(--surface); border:1px solid var(--border2); color:var(--text); font-family:var(--mono); font-size:13px; padding:9px 11px; border-radius:4px; outline:none; width:100%; transition:border-color 0.2s; }
+  .target-input:focus { border-color:var(--gold); }
+  .target-set-btn { background:var(--surface2); border:1px solid var(--border2); color:var(--text2); font-family:var(--mono); font-size:10px; letter-spacing:0.1em; padding:9px 14px; border-radius:4px; cursor:pointer; white-space:nowrap; transition:all 0.2s; }
+  .target-set-btn:hover { border-color:var(--gold); color:var(--gold); }
+
+  /* TARGET ALERT BANNER */
+  .target-alert { border-radius:5px; padding:12px 14px; margin-bottom:8px; border:1px solid; }
+  .target-alert.hit { background:rgba(74,222,128,0.08); border-color:rgba(74,222,128,0.4); }
+  .target-alert.near { background:rgba(251,191,36,0.08); border-color:rgba(251,191,36,0.4); }
+  .target-alert.watching { background:rgba(255,255,255,0.02); border-color:var(--border); }
+  .target-alert-title { font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:4px; }
+  .target-alert-body { font-size:12px; line-height:1.5; }
+  .target-progress-wrap { margin-top:8px; }
+  .target-progress-label { display:flex; justify-content:space-between; font-family:var(--mono); font-size:9px; color:var(--text3); margin-bottom:4px; }
+  .target-progress-track { background:var(--border); border-radius:10px; height:5px; width:100%; overflow:hidden; }
+  .target-progress-fill { height:100%; border-radius:10px; transition:width 0.6s ease; }
+
+  /* TARGET LIST */
+  .target-item { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); }
+  .target-item:last-child { border-bottom:none; }
+  .target-item-left { display:flex; flex-direction:column; gap:2px; }
+  .target-item-ticker { font-family:var(--mono); font-size:12px; font-weight:700; }
+  .target-item-detail { font-family:var(--mono); font-size:10px; color:var(--text3); }
+  .target-item-right { display:flex; align-items:center; gap:10px; }
+  .target-item-price { font-family:var(--mono); font-size:14px; font-weight:700; }
+  .target-remove-btn { background:transparent; border:none; color:var(--text3); cursor:pointer; font-size:13px; }
+  .target-remove-btn:hover { color:var(--red); }
+
 </style>
 </head>
 <body>
@@ -284,6 +370,7 @@ body::before {
   <div class="tab-nav">
     <button class="tab-btn active" onclick="switchTab('portfolio',this)">◈ Portfolio</button>
     <button class="tab-btn" onclick="switchTab('scanner',this)">⟳ Rhythm Scanner</button>
+    <button class="tab-btn" onclick="switchTab('journal',this)">📓 Trade Journal</button>
   </div>
 
   <!-- RISK PROFILE BANNER -->
@@ -387,6 +474,115 @@ body::before {
     </div>
   </div>
 
+
+  <!-- ══ JOURNAL TAB ══ -->
+  <div class="tab-content" id="tab-journal">
+    <div class="section-wrap">
+
+      <!-- LOG A TRADE -->
+      <div class="panel" style="margin-bottom:14px">
+        <div class="section-label">Log a Trade</div>
+
+        <div class="journal-form">
+          <div class="jf-row">
+            <div class="jf-group">
+              <div class="jf-label">Ticker</div>
+              <input class="jf-input" type="text" id="jf-ticker" placeholder="KSLV" maxlength="10" />
+            </div>
+            <div class="jf-group">
+              <div class="jf-label">Action</div>
+              <select class="jf-input" id="jf-action">
+                <option value="buy">BUY IN</option>
+                <option value="sell">SELL OUT</option>
+              </select>
+            </div>
+          </div>
+          <div class="jf-row">
+            <div class="jf-group">
+              <div class="jf-label">Price</div>
+              <input class="jf-input" type="number" id="jf-price" placeholder="0.00" step="0.01" />
+            </div>
+            <div class="jf-group">
+              <div class="jf-label">Shares</div>
+              <input class="jf-input" type="number" id="jf-shares" placeholder="0" step="1" />
+            </div>
+          </div>
+          <div class="jf-row">
+            <div class="jf-group" style="flex:2">
+              <div class="jf-label">Date</div>
+              <input class="jf-input" type="date" id="jf-date" />
+            </div>
+          </div>
+          <div class="jf-row">
+            <div class="jf-group" style="flex:1">
+              <div class="jf-label">Notes (optional)</div>
+              <input class="jf-input" type="text" id="jf-notes" placeholder="e.g. bought for dividend, near cycle low" />
+            </div>
+          </div>
+          <button class="journal-log-btn" onclick="logTrade()">LOG TRADE</button>
+        </div>
+      </div>
+
+
+      <!-- TARGET PRICE PANEL -->
+      <div class="panel" style="margin-bottom:14px">
+        <div class="section-label">Price Targets & Alerts</div>
+        <div style="font-size:11px;color:var(--text3);font-style:italic;margin-bottom:12px">Set exit and re-entry targets. The app checks them every time you open it or refresh.</div>
+
+        <!-- ADD TARGET FORM -->
+        <div class="target-row">
+          <div class="target-input-group">
+            <div class="target-input-label">Ticker</div>
+            <input class="target-input" type="text" id="tgt-ticker" placeholder="KSLV" maxlength="10" />
+          </div>
+          <div class="target-input-group">
+            <div class="target-input-label">Target Price</div>
+            <input class="target-input" type="number" id="tgt-price" placeholder="0.00" step="0.01" />
+          </div>
+          <div class="target-input-group">
+            <div class="target-input-label">Type</div>
+            <select class="target-input" id="tgt-type">
+              <option value="exit">EXIT — Sell at</option>
+              <option value="entry">ENTRY — Buy at</option>
+              <option value="stop">STOP — Warn at</option>
+            </select>
+          </div>
+          <button class="target-set-btn" onclick="addTarget()">SET</button>
+        </div>
+
+        <!-- ACTIVE ALERTS -->
+        <div id="target-alerts-wrap"></div>
+
+        <!-- TARGET LIST -->
+        <div id="target-list-wrap"></div>
+      </div>
+
+      <!-- CYCLE ANALYSIS -->
+      <div class="panel" style="margin-bottom:14px" id="cycle-analysis-panel">
+        <div class="section-label">Cycle Performance Analysis</div>
+        <div id="cycle-analysis-content">
+          <div style="font-size:12px;color:var(--text3);font-style:italic">Log at least one buy and one sell to see cycle analysis.</div>
+        </div>
+      </div>
+
+      <!-- TRADE HISTORY -->
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="section-label" style="margin-bottom:0">Trade History</div>
+          <button onclick="clearJournal()" style="background:transparent;border:1px solid var(--border2);color:var(--text3);font-family:var(--mono);font-size:9px;padding:4px 10px;border-radius:3px;cursor:pointer;letter-spacing:0.08em">CLEAR ALL</button>
+        </div>
+        <div id="trade-history-content">
+          <div style="font-size:12px;color:var(--text3);font-style:italic">No trades logged yet. Start by logging your first entry above.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="disclaimer" style="margin-top:16px">
+      ⚠ Trade journal is for personal tracking only. Not financial advice. All data stored locally on this device.
+    </div>
+  </div>
+
 </div><!-- end #app -->
 
 <script>
@@ -449,6 +645,7 @@ function showApp() {
   loadRhythm('KSLV');
   renderFavorites();
   applyRiskProfile();
+  initJournal();
 }
 
 function switchTab(name, btn) {
@@ -457,6 +654,7 @@ function switchTab(name, btn) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'journal') initJournal();
 }
 
 // ════════════════════════════════════════════════════════
@@ -573,6 +771,7 @@ async function refreshPortfolio() {
   PORTFOLIO_ASSETS.forEach(a => updateCard(a));
   document.getElementById('last-update').textContent = 'Updated '+new Date().toLocaleTimeString();
   btn.disabled=false; btn.innerHTML='⟳ REFRESH';
+  checkTargetsOnRefresh();
 }
 
 function buildMacro() {
@@ -1756,6 +1955,369 @@ function fmtPct(n){ if(n==null||isNaN(n))return'—'; return(n>=0?'+':'')+fmt(n)
 function daysUntil(s){ if(!s)return null; return Math.ceil((new Date(s)-new Date())/86400000); }
 function maSimple(arr,period){ if(!arr||arr.length<period)return null; const sl=arr.slice(-period); return sl.reduce((a,b)=>a+b,0)/period; }
 
+
+
+// ════════════════════════════════════════════════════════
+// TRADE JOURNAL
+// ════════════════════════════════════════════════════════
+let trades = JSON.parse(localStorage.getItem('mr_trades') || '[]');
+
+function initJournal() {
+  // Set default date to today
+  const today = new Date().toISOString().slice(0,10);
+  const dateEl = document.getElementById('jf-date');
+  if (dateEl) dateEl.value = today;
+  renderTradeHistory();
+  renderCycleAnalysis();
+  renderTargets();
+}
+
+function logTrade() {
+  const ticker  = (document.getElementById('jf-ticker').value || '').trim().toUpperCase();
+  const action  = document.getElementById('jf-action').value;
+  const price   = parseFloat(document.getElementById('jf-price').value);
+  const shares  = parseInt(document.getElementById('jf-shares').value);
+  const date    = document.getElementById('jf-date').value;
+  const notes   = (document.getElementById('jf-notes').value || '').trim();
+
+  if (!ticker || !price || !shares || !date) {
+    alert('Please fill in ticker, price, shares, and date.');
+    return;
+  }
+
+  const trade = {
+    id: Date.now(),
+    ticker, action, price, shares, date, notes,
+    total: price * shares,
+  };
+
+  trades.unshift(trade);
+  localStorage.setItem('mr_trades', JSON.stringify(trades));
+
+  // Clear form
+  document.getElementById('jf-ticker').value = '';
+  document.getElementById('jf-price').value = '';
+  document.getElementById('jf-shares').value = '';
+  document.getElementById('jf-notes').value = '';
+
+  renderTradeHistory();
+  renderCycleAnalysis();
+}
+
+function deleteTrade(id) {
+  trades = trades.filter(t => t.id !== id);
+  localStorage.setItem('mr_trades', JSON.stringify(trades));
+  renderTradeHistory();
+  renderCycleAnalysis();
+}
+
+function clearJournal() {
+  if (!confirm('Clear all trade history? This cannot be undone.')) return;
+  trades = [];
+  localStorage.setItem('mr_trades', JSON.stringify(trades));
+  renderTradeHistory();
+  renderCycleAnalysis();
+}
+
+function renderTradeHistory() {
+  const el = document.getElementById('trade-history-content');
+  if (!el) return;
+  if (!trades.length) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--text3);font-style:italic">No trades logged yet. Start by logging your first entry above.</div>';
+    return;
+  }
+  el.innerHTML = trades.map(t => {
+    const isBuy = t.action === 'buy';
+    const total = (t.price * t.shares).toFixed(2);
+    return '<div class="trade-row ' + (isBuy?'buy-row':'sell-row') + '">'
+      + '<div class="trade-row-header">'
+      + '<div class="trade-row-left">'
+      + '<span class="trade-action-badge ' + (isBuy?'badge-buy':'badge-sell') + '">' + (isBuy?'BUY IN':'SELL OUT') + '</span>'
+      + '<span class="trade-ticker-label">' + t.ticker + '</span>'
+      + '</div>'
+      + '<div style="display:flex;align-items:flex-start;gap:10px">'
+      + '<div><div class="trade-price-label">' + fmtUSD(t.price) + '</div><div class="trade-shares-label">' + t.shares + ' shares</div></div>'
+      + '<button class="trade-delete" onclick="deleteTrade(' + t.id + ')">✕</button>'
+      + '</div>'
+      + '</div>'
+      + '<div class="trade-date-label">' + t.date + '</div>'
+      + '<div class="trade-total">' + (isBuy?'Capital deployed:':'Proceeds:') + ' $' + total + '</div>'
+      + (t.notes ? '<div class="trade-notes">"' + t.notes + '"</div>' : '')
+      + '</div>';
+  }).join('');
+}
+
+function renderCycleAnalysis() {
+  const el = document.getElementById('cycle-analysis-content');
+  if (!el) return;
+
+  // Group trades by ticker, then pair buys with sells
+  const byTicker = {};
+  trades.forEach(t => {
+    if (!byTicker[t.ticker]) byTicker[t.ticker] = [];
+    byTicker[t.ticker].push(t);
+  });
+
+  let html = '';
+  let totalCycles = 0, totalGainPct = 0, earlyCount = 0, lateExitCount = 0;
+
+  Object.keys(byTicker).forEach(ticker => {
+    const tickerTrades = [...byTicker[ticker]].sort((a,b) => new Date(a.date)-new Date(b.date));
+    const cycles = [];
+    let pendingBuy = null;
+
+    tickerTrades.forEach(t => {
+      if (t.action === 'buy') {
+        pendingBuy = t;
+      } else if (t.action === 'sell' && pendingBuy) {
+        cycles.push({ buy: pendingBuy, sell: t });
+        pendingBuy = null;
+      }
+    });
+
+    // Show open position if pending buy
+    if (pendingBuy) {
+      const currentPrice = quoteData[ticker]?.price;
+      const unrealizedPct = currentPrice ? ((currentPrice - pendingBuy.price) / pendingBuy.price) * 100 : null;
+      html += '<div class="cycle-card">'
+        + '<div class="cycle-card-header">'
+        + '<div class="cycle-ticker-name">' + ticker + ' <span style="font-size:10px;color:var(--amber);font-weight:400">OPEN POSITION</span></div>'
+        + (unrealizedPct !== null ? '<div class="cycle-result" style="color:' + (unrealizedPct>=0?'var(--green)':'var(--red)') + '">' + (unrealizedPct>=0?'+':'') + fmt(unrealizedPct) + '%</div>' : '<div class="cycle-result" style="color:var(--text3)">—</div>')
+        + '</div>'
+        + '<div class="cycle-stats">'
+        + '<div class="cycle-stat-item"><div class="cycle-stat-label">Entry Price</div><div class="cycle-stat-val">' + fmtUSD(pendingBuy.price) + '</div></div>'
+        + '<div class="cycle-stat-item"><div class="cycle-stat-label">Entry Date</div><div class="cycle-stat-val" style="font-size:11px">' + pendingBuy.date + '</div></div>'
+        + '<div class="cycle-stat-item"><div class="cycle-stat-label">Current</div><div class="cycle-stat-val">' + (currentPrice ? fmtUSD(currentPrice) : '—') + '</div></div>'
+        + '</div>'
+        + '<div class="timing-feedback info">⟳ Position open — exit not yet logged. Watching for cycle peak signal before selling.</div>'
+        + (pendingBuy.notes ? '<div class="trade-notes" style="margin-top:8px">"' + pendingBuy.notes + '"</div>' : '')
+        + '</div>';
+    }
+
+    // Completed cycles
+    cycles.forEach((cycle, i) => {
+      const gainPct = ((cycle.sell.price - cycle.buy.price) / cycle.buy.price) * 100;
+      const gainUSD = (cycle.sell.price - cycle.buy.price) * Math.min(cycle.buy.shares, cycle.sell.shares);
+      const holdDays = Math.round((new Date(cycle.sell.date) - new Date(cycle.buy.date)) / 86400000);
+      totalCycles++;
+      totalGainPct += gainPct;
+
+      // Timing feedback - compare to known cycle data in scanCache
+      const cached = scanCache[ticker];
+      const nc = cached?.naturalCycles;
+      let feedbackClass = 'info', feedbackText = '';
+
+      if (nc) {
+        const avgCycle = nc.avgCycleDays;
+        const avgGain  = nc.avgGain;
+        const capturedPct = (gainPct / avgGain) * 100;
+
+        if (gainPct < 0) {
+          feedbackClass = 'late';
+          feedbackText = '⚠ This cycle resulted in a loss. The exit may have been too early or the entry too late relative to the cycle. Review entry timing next cycle.';
+          earlyCount++;
+        } else if (capturedPct < 40) {
+          feedbackClass = 'early';
+          feedbackText = '⚠ You captured ' + fmt(capturedPct) + '% of the avg wave gain. You may have exited early — the cycle average is +' + fmt(avgGain) + '%. Consider holding closer to the detected peak next time.';
+          lateExitCount++;
+        } else if (capturedPct >= 40 && capturedPct < 75) {
+          feedbackClass = 'info';
+          feedbackText = 'ℹ You captured ' + fmt(capturedPct) + '% of the avg wave gain (+' + fmt(avgGain) + '% avg). Solid execution — room to improve timing toward the peak.';
+        } else {
+          feedbackClass = 'good';
+          feedbackText = '✓ Strong cycle execution — you captured ' + fmt(capturedPct) + '% of the historical avg wave gain. Timing is tracking well.';
+        }
+
+        if (holdDays < avgCycle * 0.4) {
+          feedbackClass = 'early';
+          feedbackText += ' Hold duration (' + holdDays + ' days) was shorter than the avg cycle (' + avgCycle + ' days) — you may be exiting before the wave peaks.';
+        }
+      } else {
+        feedbackText = 'Scan ' + ticker + ' in the Rhythm Scanner to unlock detailed timing analysis for this ticker.';
+      }
+
+      html += '<div class="cycle-card">'
+        + '<div class="cycle-card-header">'
+        + '<div><div class="cycle-ticker-name">' + ticker + ' — Cycle ' + (i+1) + '</div><div style="font-size:10px;color:var(--text3);margin-top:2px">' + cycle.buy.date + ' → ' + cycle.sell.date + ' (' + holdDays + ' days)</div></div>'
+        + '<div class="cycle-result" style="color:' + (gainPct>=0?'var(--green)':'var(--red)') + '">' + (gainPct>=0?'+':'') + fmt(gainPct) + '%</div>'
+        + '</div>'
+        + '<div class="cycle-stats">'
+        + '<div class="cycle-stat-item"><div class="cycle-stat-label">Entry</div><div class="cycle-stat-val">' + fmtUSD(cycle.buy.price) + '</div></div>'
+        + '<div class="cycle-stat-item"><div class="cycle-stat-label">Exit</div><div class="cycle-stat-val">' + fmtUSD(cycle.sell.price) + '</div></div>'
+        + '<div class="cycle-stat-item"><div class="cycle-stat-label">P&L</div><div class="cycle-stat-val" style="color:' + (gainUSD>=0?'var(--green)':'var(--red)') + '">' + (gainUSD>=0?'+':'') + fmtUSD(Math.abs(gainUSD)) + '</div></div>'
+        + '</div>'
+        + '<div class="timing-feedback ' + feedbackClass + '">' + feedbackText + '</div>'
+        + '</div>';
+    });
+  });
+
+  // Overall habit summary if multiple cycles
+  if (totalCycles >= 2) {
+    const avgGainPct = totalGainPct / totalCycles;
+    html += '<div class="habit-box">'
+      + '<div class="habit-box-label">Your Trading Habits — ' + totalCycles + ' Completed Cycles</div>'
+      + '<div class="habit-row"><span class="habit-label">Avg gain per cycle</span><span class="habit-val" style="color:' + (avgGainPct>=0?'var(--green)':'var(--red)') + '">' + (avgGainPct>=0?'+':'') + fmt(avgGainPct) + '%</span></div>'
+      + '<div class="habit-row"><span class="habit-label">Cycles with gains</span><span class="habit-val" style="color:var(--green)">' + trades.filter((t,i,a) => { return false; }).length + totalCycles + ' of ' + totalCycles + '</span></div>'
+      + '<div class="habit-row"><span class="habit-label">Early exits detected</span><span class="habit-val" style="color:' + (lateExitCount>0?'var(--amber)':'var(--green)') + '">' + lateExitCount + '</span></div>'
+      + '<div class="habit-row"><span class="habit-label">Loss cycles</span><span class="habit-val" style="color:' + (earlyCount>0?'var(--red)':'var(--green)') + '">' + earlyCount + '</span></div>'
+      + '</div>';
+  }
+
+  if (!html) {
+    html = '<div style="font-size:12px;color:var(--text3);font-style:italic">Log at least one buy and one sell on the same ticker to see cycle analysis.</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+
+// ════════════════════════════════════════════════════════
+// TARGET PRICE ALERTS
+// ════════════════════════════════════════════════════════
+let targets = JSON.parse(localStorage.getItem('mr_targets') || '[]');
+
+const TARGET_LABELS = {
+  exit:  { label:'EXIT TARGET', color:'var(--green)',  icon:'🎯' },
+  entry: { label:'ENTRY TARGET', color:'var(--blue)',   icon:'⚡' },
+  stop:  { label:'STOP WARNING', color:'var(--red)',    icon:'⚠' },
+};
+
+function addTarget() {
+  const ticker = (document.getElementById('tgt-ticker').value || '').trim().toUpperCase();
+  const price  = parseFloat(document.getElementById('tgt-price').value);
+  const type   = document.getElementById('tgt-type').value;
+  if (!ticker || !price) { alert('Enter a ticker and target price.'); return; }
+  targets.push({ id:Date.now(), ticker, price, type, set: new Date().toISOString().slice(0,10) });
+  localStorage.setItem('mr_targets', JSON.stringify(targets));
+  document.getElementById('tgt-ticker').value = '';
+  document.getElementById('tgt-price').value = '';
+  renderTargets();
+}
+
+function removeTarget(id) {
+  targets = targets.filter(t => t.id !== id);
+  localStorage.setItem('mr_targets', JSON.stringify(targets));
+  renderTargets();
+}
+
+function renderTargets() {
+  const alertsWrap = document.getElementById('target-alerts-wrap');
+  const listWrap   = document.getElementById('target-list-wrap');
+  if (!alertsWrap || !listWrap) return;
+
+  let alertsHTML = '';
+  let listHTML   = '';
+
+  if (!targets.length) {
+    listHTML = '<div style="font-size:11px;color:var(--text3);font-style:italic">No targets set. Add your first exit or entry target above.</div>';
+    alertsWrap.innerHTML = '';
+    listWrap.innerHTML = listHTML;
+    return;
+  }
+
+  targets.forEach(t => {
+    const current = quoteData[t.ticker]?.price;
+    const tInfo = TARGET_LABELS[t.type] || TARGET_LABELS.exit;
+
+    // Alert logic
+    if (current) {
+      const isExit  = t.type === 'exit';
+      const isEntry = t.type === 'entry';
+      const isStop  = t.type === 'stop';
+      const diff    = ((current - t.price) / t.price) * 100;
+      const absDiff = Math.abs(diff);
+
+      // Determine alert state
+      let alertClass = 'watching', alertTitle = '', alertBody = '', alertColor = tInfo.color;
+
+      if (isExit) {
+        if (current >= t.price) {
+          alertClass = 'hit';
+          alertTitle = '🎯 EXIT TARGET HIT — ' + t.ticker;
+          alertBody  = 'Current price ' + fmtUSD(current) + ' has reached or exceeded your exit target of ' + fmtUSD(t.price) + '. Consider selling if cycle analysis confirms you are near the peak.';
+          alertColor = 'var(--green)';
+        } else if (absDiff <= 3) {
+          alertClass = 'near';
+          alertTitle = '⚡ APPROACHING EXIT — ' + t.ticker;
+          alertBody  = 'Price ' + fmtUSD(current) + ' is within ' + fmt(absDiff) + '% of your exit target ' + fmtUSD(t.price) + '. Start watching closely.';
+          alertColor = 'var(--amber)';
+        }
+      } else if (isEntry) {
+        if (current <= t.price) {
+          alertClass = 'hit';
+          alertTitle = '⚡ ENTRY TARGET HIT — ' + t.ticker;
+          alertBody  = 'Current price ' + fmtUSD(current) + ' is at or below your entry target of ' + fmtUSD(t.price) + '. Cycle low zone — consider buying in if rhythm confirms.';
+          alertColor = 'var(--blue)';
+        } else if (absDiff <= 3) {
+          alertClass = 'near';
+          alertTitle = '◉ APPROACHING ENTRY — ' + t.ticker;
+          alertBody  = 'Price ' + fmtUSD(current) + ' is within ' + fmt(absDiff) + '% of your entry target ' + fmtUSD(t.price) + '.';
+          alertColor = 'var(--amber)';
+        }
+      } else if (isStop) {
+        if (current <= t.price) {
+          alertClass = 'hit';
+          alertTitle = '⚠ STOP LEVEL HIT — ' + t.ticker;
+          alertBody  = 'Price ' + fmtUSD(current) + ' has dropped to or below your stop warning level of ' + fmtUSD(t.price) + '. Review your position.';
+          alertColor = 'var(--red)';
+        } else if (absDiff <= 3) {
+          alertClass = 'near';
+          alertTitle = '⚠ APPROACHING STOP — ' + t.ticker;
+          alertBody  = 'Price ' + fmtUSD(current) + ' is within ' + fmt(absDiff) + '% of your stop level ' + fmtUSD(t.price) + '.';
+          alertColor = 'var(--amber)';
+        }
+      }
+
+      if (alertClass !== 'watching') {
+        // Progress bar
+        const entry = trades.filter(tr => tr.ticker === t.ticker && tr.action === 'buy').slice(-1)[0];
+        let progressHTML = '';
+        if (entry && isExit) {
+          const pct = Math.min(100, Math.max(0, ((current - entry.price) / (t.price - entry.price)) * 100));
+          const barColor = pct >= 100 ? 'var(--green)' : pct >= 70 ? 'var(--amber)' : 'var(--blue)';
+          progressHTML = '<div class="target-progress-wrap">'
+            + '<div class="target-progress-label"><span>Entry ' + fmtUSD(entry.price) + '</span><span>Target ' + fmtUSD(t.price) + '</span></div>'
+            + '<div class="target-progress-track"><div class="target-progress-fill" style="width:' + pct + '%;background:' + barColor + '"></div></div>'
+            + '<div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px;text-align:right">' + fmt(pct) + '% of target reached</div>'
+            + '</div>';
+        }
+        alertsHTML += '<div class="target-alert ' + alertClass + '">'
+          + '<div class="target-alert-title" style="color:' + alertColor + '">' + alertTitle + '</div>'
+          + '<div class="target-alert-body" style="color:var(--text2)">' + alertBody + '</div>'
+          + progressHTML
+          + '</div>';
+      }
+    }
+
+    // List item
+    const current2 = quoteData[t.ticker]?.price;
+    const pctAway = current2 ? ((t.price - current2) / current2 * 100) : null;
+    const tInfo2 = TARGET_LABELS[t.type] || TARGET_LABELS.exit;
+    listHTML += '<div class="target-item">'
+      + '<div class="target-item-left">'
+      + '<div style="display:flex;gap:6px;align-items:center">'
+      + '<span class="target-item-ticker">' + t.ticker + '</span>'
+      + '<span style="font-family:var(--mono);font-size:8px;color:' + tInfo2.color + ';border:1px solid ' + tInfo2.color + '44;padding:1px 6px;border-radius:3px;letter-spacing:0.08em">' + t.type.toUpperCase() + '</span>'
+      + '</div>'
+      + '<div class="target-item-detail">Set ' + t.set + (pctAway !== null ? ' · ' + (pctAway > 0 ? '+' : '') + fmt(pctAway) + '% away' : '') + '</div>'
+      + '</div>'
+      + '<div class="target-item-right">'
+      + '<div class="target-item-price" style="color:' + tInfo2.color + '">' + fmtUSD(t.price) + '</div>'
+      + '<button class="target-remove-btn" onclick="removeTarget(' + t.id + ')">✕</button>'
+      + '</div>'
+      + '</div>';
+  });
+
+  alertsWrap.innerHTML = alertsHTML;
+  listWrap.innerHTML   = listHTML || '<div style="font-size:11px;color:var(--text3);font-style:italic;padding:8px 0">All targets set — no alerts triggered at current prices.</div>';
+}
+
+function checkTargetsOnRefresh() {
+  // Called after portfolio refresh so targets update with fresh prices
+  if (document.getElementById('tab-journal')?.classList.contains('active')) {
+    renderTargets();
+  }
+}
 
 </script>
 </body>
