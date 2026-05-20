@@ -860,6 +860,36 @@ async function refreshPortfolio() {
   document.getElementById('last-update').textContent = 'Updated '+new Date().toLocaleTimeString();
   btn.disabled=false; btn.innerHTML='⟳ REFRESH';
   checkTargetsOnRefresh();
+  // Fetch 90-day candles for SR on all watchlist tickers
+  setTimeout(function() {
+    watchlist.forEach(function(ticker) {
+      fetchSRCandles(ticker);
+    });
+  }, 1500); // slight delay so portfolio loads first
+}
+
+async function fetchSRCandles(ticker) {
+  // Fetch 90 days via Yahoo for SR calculation
+  try {
+    var to = Math.floor(Date.now()/1000);
+    var from = to - 90*86400;
+    var yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1d&period1=' + from + '&period2=' + to;
+    var proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(yahooUrl);
+    var r = await fetch(proxyUrl);
+    var d = await r.json();
+    var result = d && d.chart && d.chart.result && d.chart.result[0];
+    if (!result) return;
+    var closes = result.indicators && result.indicators.quote && result.indicators.quote[0] && result.indicators.quote[0].close;
+    if (!closes || closes.length < 20) return;
+    var validCloses = closes.filter(function(c) { return c !== null && c !== undefined && !isNaN(c); });
+    if (validCloses.length < 20) return;
+    var currentPrice = quoteData[ticker] && quoteData[ticker].price;
+    if (currentPrice) {
+      computeAndRenderSR(ticker, currentPrice, validCloses);
+    }
+  } catch(e) {
+    // Silent fail - SR is supplementary
+  }
 }
 
 function buildMacro() {
@@ -1056,6 +1086,22 @@ async function runScan() {
   const result = { quote, candles, divs, cycles, naturalCycles, name };
   scanCache[ticker] = result;
   renderScanResult(ticker, result);
+  // Compute SR for scanner result using candle data
+  if (candles && candles.closes && quote) {
+    setTimeout(function() {
+      var srEl = document.getElementById('sr-scan-' + ticker);
+      if (srEl) {
+        var sr = calcSupportResistance(candles.closes);
+        if (sr) {
+          var tempId = 'sr-' + ticker;
+          // Temporarily use the sr- id pattern renderSRPanel expects
+          srEl.id = tempId;
+          renderSRPanel(ticker, quote.price, sr);
+          srEl.id = 'sr-scan-' + ticker;
+        }
+      }
+    }, 100);
+  }
   btn.disabled=false; btn.textContent='SCAN';
 }
 
@@ -1190,7 +1236,8 @@ function renderScanResult(ticker, { quote, candles, divs, cycles, naturalCycles,
       <div class="signal-label" style="color:${signal.type==='entry'?'var(--green)':signal.type==='exit'?'var(--red)':signal.type==='watch'?'var(--amber)':'var(--text3)'}">${signal.icon} ${signal.label}</div>
       <div class="signal-desc">${signal.desc}</div>
     </div>
-    ${buildPositionRiskPanel(ticker, quote, naturalCycles, hasDivs)}`;
+    ${buildPositionRiskPanel(ticker, quote, naturalCycles, hasDivs)}
+    <div id="sr-scan-${ticker}"></div>`;
 
   // Natural cycle section
   if (naturalCycles && naturalCycles.consistency > 0.3) {
@@ -1636,6 +1683,22 @@ async function runScan() {
   const result = { quote, candles, divs, cycles, naturalCycles, name };
   scanCache[ticker] = result;
   renderScanResult(ticker, result);
+  // Compute SR for scanner result using candle data
+  if (candles && candles.closes && quote) {
+    setTimeout(function() {
+      var srEl = document.getElementById('sr-scan-' + ticker);
+      if (srEl) {
+        var sr = calcSupportResistance(candles.closes);
+        if (sr) {
+          var tempId = 'sr-' + ticker;
+          // Temporarily use the sr- id pattern renderSRPanel expects
+          srEl.id = tempId;
+          renderSRPanel(ticker, quote.price, sr);
+          srEl.id = 'sr-scan-' + ticker;
+        }
+      }
+    }, 100);
+  }
   btn.disabled=false; btn.textContent='SCAN';
 }
 
@@ -1770,7 +1833,8 @@ function renderScanResult(ticker, { quote, candles, divs, cycles, naturalCycles,
       <div class="signal-label" style="color:${signal.type==='entry'?'var(--green)':signal.type==='exit'?'var(--red)':signal.type==='watch'?'var(--amber)':'var(--text3)'}">${signal.icon} ${signal.label}</div>
       <div class="signal-desc">${signal.desc}</div>
     </div>
-    ${buildPositionRiskPanel(ticker, quote, naturalCycles, hasDivs)}`;
+    ${buildPositionRiskPanel(ticker, quote, naturalCycles, hasDivs)}
+    <div id="sr-scan-${ticker}"></div>`;
 
   // Natural cycle section
   if (naturalCycles && naturalCycles.consistency > 0.3) {
