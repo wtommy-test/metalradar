@@ -716,7 +716,7 @@ async function finnhubCandles(symbol, days=365) {
   const to = Math.floor(Date.now()/1000);
   const from = to - days*86400;
   const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&period1=${from}&period2=${to}&range=1y`;
-  const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`;
+  const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`;
   try {
     const r = await fetch(proxyUrl);
     if (!r.ok) throw new Error('proxy failed');
@@ -761,7 +761,7 @@ async function finnhubDividends(symbol) {
     const toTs = Math.floor(Date.now()/1000);
     const fromTs = toTs - 730*86400;
     const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&period1=${fromTs}&period2=${toTs}&events=div`;
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`;
+    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`;
     const r = await fetch(proxyUrl);
     const d = await r.json();
     const events = d?.chart?.result?.[0]?.events?.dividends;
@@ -2378,7 +2378,7 @@ function renderWatchlistChips(){
   w.innerHTML=watchlist.map(function(t){
     return ["<div class=\"wl-chip\">",
       "<span class=\"wl-chip-text\">",t,"</span>",
-      "<button class=\"wl-chip-remove\" onclick=\"removeWatchlistTicker('",t,"')\">&times;</button>",
+      "<button class=\"wl-chip-remove\" onclick=\"removeWatchlistTicker('",t,"')\">×</button>",
       "</div>"].join("");
   }).join("");
 }
@@ -2406,13 +2406,13 @@ function cardBase(ticker,colorBorder,iconHTML,nameHTML,platformsHTML,extraHTML,n
     "<div class=\"sparkline-wrap\"><svg id=\"spark-",ticker,"\" width=\"100%\" height=\"40\" viewBox=\"0 0 300 40\" preserveAspectRatio=\"none\"></svg>",
     "<div class=\"sparkline-ma\" id=\"ma-",ticker,"\"></div></div>",
     "<div class=\"hlp-row\" id=\"hlp-",ticker,"\" style=\"display:none\">",
-    "<div><div class=\"hlp-label\">Day High</div><div class=\"hlp-value up\" id=\"high-",ticker,"\">&#8212;</div></div>",
-    "<div><div class=\"hlp-label\">Day Low</div><div class=\"hlp-value down\" id=\"low-",ticker,"\">&#8212;</div></div>",
-    "<div><div class=\"hlp-label\">Prev Close</div><div class=\"hlp-value neutral\" id=\"prev-",ticker,"\">&#8212;</div></div></div>",
+    "<div><div class=\"hlp-label\">Day High</div><div class=\"hlp-value up\" id=\"high-",ticker,"\">—</div></div>",
+    "<div><div class=\"hlp-label\">Day Low</div><div class=\"hlp-value down\" id=\"low-",ticker,"\">—</div></div>",
+    "<div><div class=\"hlp-label\">Prev Close</div><div class=\"hlp-value neutral\" id=\"prev-",ticker,"\">—</div></div></div>",
     extraHTML,
     "<div id=\"split-",ticker,"\"></div>",
     notesHTML,
-    "<button class=\"news-btn\" onclick=\"toggleNews('",ticker,"')\">&blacktriangledown; Latest News</button>",
+    "<button class=\"news-btn\" onclick=\"toggleNews('",ticker,"')\">▼ Latest News</button>",
     "<div class=\"news-panel\" id=\"news-",ticker,"\"></div>",
     "</div>"].join("");
 }
@@ -2421,9 +2421,9 @@ function buildKnownCardHTML(a){
   var platforms=a.platforms.map(function(p){return "<span class=\"platform-badge\">"+p+"</span>";}).join("");
   var extra="";
   if(a.type==="metals-etf"){extra+=buildDivBanner(a);}
-  if(a.type==="metals-etf"){extra+='<div class="roc-note"><span style="color:var(--orange)">&#9670;</span><span>Distribution may include <span style="color:var(--orange)">Return of Capital (ROC)</span> &mdash; verify before sizing.</span></div>';}
-  if(a.type==="crypto-miner"){extra+='<div class="mara-panel"><div class="mara-panel-label">BTC Correlation</div><div class="mara-btc-row"><div><div class="mara-btc-sublabel">BTC Price</div><div class="mara-btc-val" id="btc-price">&#8212;</div></div><div><div class="mara-btc-sublabel">24h Change</div><div id="btc-change" style="font-family:var(--mono);font-size:13px;font-weight:700">&#8212;</div></div><div class="mara-btc-note">MARA tracks BTC sentiment.</div></div></div>';}
-  var notesBtn=["<button class=\"expand-btn\" onclick=\"toggleNotes('",a.ticker,"')\">&blacktriangledown; Strategy Notes</button>",
+  if(a.type==="metals-etf"){extra+='<div class="roc-note"><span style="color:var(--orange)">◆</span><span>Distribution may include <span style="color:var(--orange)">Return of Capital (ROC)</span> — verify before sizing.</span></div>';}
+  if(a.type==="crypto-miner"){extra+='<div class="mara-panel"><div class="mara-panel-label">BTC Correlation</div><div class="mara-btc-row"><div><div class="mara-btc-sublabel">BTC Price</div><div class="mara-btc-val" id="btc-price">—</div></div><div><div class="mara-btc-sublabel">24h Change</div><div id="btc-change" style="font-family:var(--mono);font-size:13px;font-weight:700">—</div></div><div class="mara-btc-note">MARA tracks BTC sentiment.</div></div></div>';}
+  var notesBtn=["<button class=\"expand-btn\" onclick=\"toggleNotes('",a.ticker,"')\">▼ Strategy Notes</button>",
     "<div class=\"strategy-notes\" id=\"notes-",a.ticker,"\">",
     a.notes.map(function(n){return "<p class=\"note-p\"><span style=\"color:"+n.hl+";font-weight:600\">"+n.label+":</span> "+n.text+"</p>";}).join(""),
     "</div>"].join("");
@@ -2431,7 +2431,7 @@ function buildKnownCardHTML(a){
 }
 
 function buildDynamicCardHTML(ticker){
-  return cardBase(ticker,"var(--border2)","&#9672;","Loading&hellip;","","","");
+  return cardBase(ticker,"var(--border2)","◈","Loading…","","","");
 }
 
 // ════════ SPLITS ════════
@@ -2451,10 +2451,10 @@ function renderSplitWarning(ticker,splits){
   splits.forEach(function(s){
     var isRev=s.toFactor<s.fromFactor;
     el.innerHTML+=["<div class=\"split-warn ",isRev?"split-rev":"split-fwd","\">",
-      "<span>",isRev?"&#9888;":"&#8505;","</span>",
+      "<span>",isRev?"⚠":"ℹ","</span>",
       "<span><strong>",isRev?"REVERSE SPLIT":"FORWARD SPLIT","</strong> ",
       s.fromFactor,":",s.toFactor," on ",s.date,". ",
-      isRev?"May indicate NAV erosion &mdash; review position carefully.":"Generally neutral to positive.",
+      isRev?"May indicate NAV erosion — review position carefully.":"Generally neutral to positive.",
       "</span></div>"].join("");
   });
 }
@@ -2466,10 +2466,10 @@ async function toggleNews(ticker){
   var btn=panel?panel.previousElementSibling:null;
   if(!panel)return;
   var isOpen=panel.classList.toggle("open");
-  if(btn)btn.textContent=isOpen?"&#9650; Hide News":"&#9660; Latest News";
+  if(btn)btn.textContent=isOpen?"▲ Hide News":"▼ Latest News";
   if(!isOpen)return;
   if(newsCache[ticker]){panel.innerHTML=newsCache[ticker];return;}
-  panel.innerHTML="<div style=\"font-family:var(--mono);font-size:10px;color:var(--text3)\">Loading news&hellip;</div>";
+  panel.innerHTML="<div style=\"font-family:var(--mono);font-size:10px;color:var(--text3)\">Loading news…</div>";
   try{
     var toD=new Date().toISOString().slice(0,10);
     var frD=new Date(Date.now()-7*86400000).toISOString().slice(0,10);
@@ -2481,7 +2481,7 @@ async function toggleNews(ticker){
       var url=(item.url||"").replace(/"/g,"");
       return ["<div class=\"news-item\">",
         "<div class=\"news-headline\" onclick=\"window.open('",url,"','_blank')\">",item.headline,"</div>",
-        "<div class=\"news-meta\"><span class=\"news-src\">",item.source||"","</span> &middot; ",dt,"</div>",
+        "<div class=\"news-meta\"><span class=\"news-src\">",item.source||"","</span> · ",dt,"</div>",
         "</div>"].join("");
     }).join("");
     newsCache[ticker]=h;panel.innerHTML=h;
