@@ -363,6 +363,28 @@ body::before {
   .split-warn{display:flex;align-items:flex-start;gap:6px;padding:7px 10px;border-radius:4px;margin-top:6px;font-size:10px}
   .split-rev{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);color:var(--red)}
   .split-fwd{background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.3);color:var(--blue)}
+
+  /* ── SUPPORT & RESISTANCE ── */
+  .sr-panel { background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:10px 12px; margin-top:8px; }
+  .sr-label { font-family:var(--mono); font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:8px; }
+  .sr-bar-wrap { position:relative; margin-bottom:8px; }
+  .sr-bar-track { background:var(--border); border-radius:10px; height:6px; width:100%; position:relative; }
+  .sr-bar-fill { height:100%; border-radius:10px; position:absolute; left:0; }
+  .sr-price-marker { position:absolute; top:-4px; width:3px; height:14px; border-radius:2px; background:var(--text); transform:translateX(-50%); }
+  .sr-levels { display:flex; justify-content:space-between; margin-bottom:6px; }
+  .sr-level-item { text-align:center; }
+  .sr-level-label { font-family:var(--mono); font-size:8px; color:var(--text3); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:2px; }
+  .sr-level-price { font-family:var(--mono); font-size:11px; font-weight:700; }
+  .sr-current { text-align:center; }
+  .sr-current-label { font-family:var(--mono); font-size:8px; color:var(--text3); }
+  .sr-current-price { font-family:var(--mono); font-size:12px; font-weight:700; color:var(--text); }
+  .sr-alert { font-size:10px; font-style:italic; margin-top:6px; padding:5px 8px; border-radius:3px; line-height:1.5; }
+  .sr-alert.near-support { color:var(--green); background:rgba(74,222,128,0.06); border:1px solid rgba(74,222,128,0.2); }
+  .sr-alert.near-resistance { color:var(--amber); background:rgba(251,191,36,0.06); border:1px solid rgba(251,191,36,0.2); }
+  .sr-alert.midrange { color:var(--text3); background:var(--surface); border:1px solid var(--border); }
+  .sr-alert.at-support { color:var(--green); background:rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.35); font-weight:600; }
+  .sr-alert.at-resistance { color:var(--red); background:rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.35); font-weight:600; }
+
 </style>
 </head>
 <body>
@@ -827,6 +849,7 @@ async function refreshPortfolio() {
           var m7=maSimple(c.closes,7),m20=maSimple(c.closes,20);
           var me=document.getElementById("ma-"+ticker);if(me)me.innerHTML=(m7?"<span class=\"ma-label\">MA7 <span style=\"color:#a3e635;font-family:var(--mono)\">"+fmtUSD(m7)+"</span></span>":"")+(m20?"<span class=\"ma-label\">MA20 <span style=\"color:#60a5fa;font-family:var(--mono)\">"+fmtUSD(m20)+"</span></span>":"");
           if(m7&&m20){var b=document.getElementById("trend-"+ticker);if(b){b.textContent=m7>m20?"BULLISH":"BEARISH";b.className="trend-badge "+(m7>m20?"trend-bull":"trend-bear");b.style.display="inline";}}
+          if(q) computeAndRenderSR(ticker, q.price, c.closes);
         }
       });
     }
@@ -897,6 +920,7 @@ function updateCard(asset) {
       badge.className = `trend-badge ${bull?'trend-bull':'trend-bear'}`;
       badge.style.display = 'inline';
     }
+    if (q) computeAndRenderSR(asset.ticker, q.price, c.closes);
   }
   if (asset.type==='crypto-miner'&&btcQuote) {
     const btcPriceEl=document.getElementById('btc-price');
@@ -2411,6 +2435,7 @@ function cardBase(ticker,colorBorder,iconHTML,nameHTML,platformsHTML,extraHTML,n
     "<div><div class=\"hlp-label\">Prev Close</div><div class=\"hlp-value neutral\" id=\"prev-",ticker,"\">—</div></div></div>",
     extraHTML,
     "<div id=\"split-",ticker,"\"></div>",
+    "<div id=\"sr-",ticker,"\"></div>",
     notesHTML,
     "<button class=\"news-btn\" onclick=\"toggleNews('",ticker,"')\">▼ Latest News</button>",
     "<div class=\"news-panel\" id=\"news-",ticker,"\"></div>",
@@ -2487,6 +2512,130 @@ async function toggleNews(ticker){
     newsCache[ticker]=h;panel.innerHTML=h;
   }catch(e){panel.innerHTML="<div style=\"font-size:11px;color:var(--red)\">Could not load news.</div>";}
 }
+
+// ════════════════════════════════════════════════════════
+// SUPPORT & RESISTANCE
+// ════════════════════════════════════════════════════════
+function calcSupportResistance(closes) {
+  // Uses 90 days of daily closes to find key S&R levels
+  // Method: find clusters of price reactions (highs and lows that repeat)
+  if (!closes || closes.length < 20) return null;
+
+  const data = closes.slice(-90); // last 90 days
+  const win = 4; // window for local extremes
+
+  // Find local highs and lows
+  const localHighs = [], localLows = [];
+  for (let i = win; i < data.length - win; i++) {
+    const slice = data.slice(i - win, i + win + 1);
+    const max = Math.max(...slice);
+    const min = Math.min(...slice);
+    if (data[i] >= max * 0.998) localHighs.push(data[i]);
+    if (data[i] <= min * 1.002) localLows.push(data[i]);
+  }
+
+  if (!localHighs.length || !localLows.length) return null;
+
+  // Cluster nearby levels (within 1.5% of each other)
+  function cluster(levels) {
+    const sorted = [...levels].sort((a, b) => a - b);
+    const clusters = [];
+    let group = [sorted[0]];
+    for (let i = 1; i < sorted.length; i++) {
+      if ((sorted[i] - group[0]) / group[0] < 0.015) {
+        group.push(sorted[i]);
+      } else {
+        clusters.push(group);
+        group = [sorted[i]];
+      }
+    }
+    clusters.push(group);
+    // Return strongest clusters (most touches)
+    return clusters
+      .sort((a, b) => b.length - a.length)
+      .map(g => ({ price: g.reduce((s, v) => s + v, 0) / g.length, touches: g.length }));
+  }
+
+  const supportClusters    = cluster(localLows);
+  const resistanceClusters = cluster(localHighs);
+
+  const support    = supportClusters[0]?.price;
+  const resistance = resistanceClusters[0]?.price;
+  const supTouches = supportClusters[0]?.touches || 1;
+  const resTouches = resistanceClusters[0]?.touches || 1;
+
+  if (!support || !resistance || support >= resistance) return null;
+
+  return { support, resistance, supTouches, resTouches };
+}
+
+function renderSRPanel(ticker, currentPrice, srData) {
+  const el = document.getElementById('sr-' + ticker);
+  if (!el) return;
+
+  if (!srData || !currentPrice) {
+    el.innerHTML = '';
+    return;
+  }
+
+  const { support, resistance, supTouches, resTouches } = srData;
+  const range = resistance - support;
+  const pos   = Math.max(0, Math.min(100, ((currentPrice - support) / range) * 100));
+
+  // Determine proximity
+  const pctFromSupport    = ((currentPrice - support) / support) * 100;
+  const pctFromResistance = ((resistance - currentPrice) / resistance) * 100;
+
+  let alertClass = 'midrange';
+  let alertText  = 'Price is between support and resistance. Do your own checks before acting.';
+
+  if (pctFromSupport <= 2) {
+    alertClass = 'at-support';
+    alertText  = 'Price is at or very near support (' + fmtUSD(support) + ', ' + supTouches + ' touches). This zone has historically acted as a floor — do your own checks.';
+  } else if (pctFromSupport <= 5) {
+    alertClass = 'near-support';
+    alertText  = 'Price is approaching support at ' + fmtUSD(support) + '. Worth monitoring — historically a reaction zone.';
+  } else if (pctFromResistance <= 2) {
+    alertClass = 'at-resistance';
+    alertText  = 'Price is at or very near resistance (' + fmtUSD(resistance) + ', ' + resTouches + ' touches). This zone has historically acted as a ceiling — do your own checks.';
+  } else if (pctFromResistance <= 5) {
+    alertClass = 'near-resistance';
+    alertText  = 'Price is approaching resistance at ' + fmtUSD(resistance) + '. Worth monitoring — historically a stall zone.';
+  }
+
+  // Bar color based on position
+  const barColor = pos < 33 ? 'var(--green)' : pos > 67 ? 'var(--red)' : 'var(--amber)';
+
+  el.innerHTML = '<div class="sr-panel">'
+    + '<div class="sr-label">Support &amp; Resistance</div>'
+    + '<div class="sr-levels">'
+    + '<div class="sr-level-item"><div class="sr-level-label">Support</div><div class="sr-level-price" style="color:var(--green)">' + fmtUSD(support) + '</div><div style="font-family:var(--mono);font-size:8px;color:var(--text3)">' + supTouches + ' touches</div></div>'
+    + '<div class="sr-current"><div class="sr-current-label">Current</div><div class="sr-current-price">' + fmtUSD(currentPrice) + '</div></div>'
+    + '<div class="sr-level-item" style="text-align:right"><div class="sr-level-label">Resistance</div><div class="sr-level-price" style="color:var(--red)">' + fmtUSD(resistance) + '</div><div style="font-family:var(--mono);font-size:8px;color:var(--text3)">' + resTouches + ' touches</div></div>'
+    + '</div>'
+    + '<div class="sr-bar-wrap">'
+    + '<div class="sr-bar-track">'
+    + '<div class="sr-bar-fill" style="width:' + pos + '%;background:' + barColor + ';opacity:0.4"></div>'
+    + '<div class="sr-price-marker" style="left:' + pos + '%"></div>'
+    + '</div>'
+    + '</div>'
+    + '<div class="sr-alert ' + alertClass + '">' + alertText + '</div>'
+    + '</div>';
+}
+
+// Store SR data per ticker
+var srCache = {};
+
+function computeAndRenderSR(ticker, currentPrice, closes) {
+  if (!closes || closes.length < 20) return;
+  // Use 90 days if available
+  const sr = calcSupportResistance(closes);
+  if (sr) {
+    srCache[ticker] = sr;
+    renderSRPanel(ticker, currentPrice, sr);
+  }
+}
+
 </script>
 </body>
 </html>
