@@ -334,6 +334,35 @@ body::before {
   .target-remove-btn { background:transparent; border:none; color:var(--text3); cursor:pointer; font-size:13px; }
   .target-remove-btn:hover { color:var(--red); }
 
+
+  /* WATCHLIST */
+  .watchlist-manager{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:14px 16px;margin:16px 16px 0}
+  .wl-title{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--text3);text-transform:uppercase;margin-bottom:10px}
+  .wl-add-row{display:flex;gap:8px;margin-bottom:10px}
+  .wl-input{flex:1;background:var(--bg);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:13px;padding:9px 12px;border-radius:4px;outline:none;text-transform:uppercase;letter-spacing:.1em;transition:border-color .2s}
+  .wl-input:focus{border-color:var(--gold)}
+  .wl-input::placeholder{color:var(--text3);font-size:11px;text-transform:none}
+  .wl-add-btn{background:var(--gold);border:none;color:#000;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.12em;padding:9px 14px;border-radius:4px;cursor:pointer;white-space:nowrap}
+  .wl-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .wl-chip{display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:4px 10px 4px 12px}
+  .wl-chip-text{font-family:var(--mono);font-size:11px;color:var(--text2);letter-spacing:.08em}
+  .wl-chip-remove{background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:14px;line-height:1;padding:0 2px}
+  .wl-chip-remove:hover{color:var(--red)}
+  /* NEWS */
+  .news-btn{background:transparent;border:1px solid var(--border2);color:var(--text3);font-family:var(--mono);font-size:9px;letter-spacing:.1em;padding:5px 10px;border-radius:3px;cursor:pointer;width:100%;margin-top:8px;transition:all .2s;text-align:left}
+  .news-btn:hover{border-color:var(--blue);color:var(--blue)}
+  .news-panel{margin-top:8px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:10px 12px;display:none}
+  .news-panel.open{display:block;animation:fadeUp .2s ease both}
+  .news-item{padding:8px 0;border-bottom:1px solid var(--border)}
+  .news-item:last-child{border-bottom:none}
+  .news-headline{font-size:12px;color:var(--text2);line-height:1.45;margin-bottom:3px;cursor:pointer}
+  .news-headline:hover{color:var(--gold)}
+  .news-meta{font-family:var(--mono);font-size:9px;color:var(--text3)}
+  .news-src{color:var(--blue)}
+  /* SPLITS */
+  .split-warn{display:flex;align-items:flex-start;gap:6px;padding:7px 10px;border-radius:4px;margin-top:6px;font-size:10px}
+  .split-rev{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);color:var(--red)}
+  .split-fwd{background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.3);color:var(--blue)}
 </style>
 </head>
 <body>
@@ -404,6 +433,16 @@ body::before {
       </div>
       <button class="modal-save" onclick="saveProfile()">SAVE PROFILE</button>
     </div>
+  </div>
+
+  <!-- WATCHLIST MANAGER -->
+  <div class="watchlist-manager">
+    <div class="wl-title">My Watchlist &mdash; <span id="wl-count">0/20</span></div>
+    <div class="wl-add-row">
+      <input class="wl-input" type="text" id="wl-input" placeholder="Add any ticker&hellip;" maxlength="10" />
+      <button class="wl-add-btn" onclick="addWatchlistTicker()">+ ADD</button>
+    </div>
+    <div class="wl-chips" id="wl-chips"></div>
   </div>
 
   <!-- ══ PORTFOLIO TAB ══ -->
@@ -626,6 +665,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (API_KEY) showApp();
   document.getElementById('api-key-input').addEventListener('keydown', e => { if(e.key==='Enter') saveKey(); });
   document.getElementById('scanner-input').addEventListener('keydown', e => { if(e.key==='Enter') runScan(); });
+  var _wli=document.getElementById("wl-input");if(_wli)_wli.addEventListener("keydown",function(e){if(e.key==="Enter")addWatchlistTicker();});
 });
 
 function saveKey() {
@@ -640,6 +680,7 @@ function showApp() {
   document.getElementById('setup-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   buildMacro();
+  initWatchlist();
   buildCards();
   refreshPortfolio();
   loadRhythm('KSLV');
@@ -766,6 +807,30 @@ async function refreshPortfolio() {
     if (results[i].status==='fulfilled'&&results[i].value) quoteData[a.ticker]=results[i].value;
     if (results[i+n].status==='fulfilled'&&results[i+n].value) candleData[a.ticker]=results[i+n].value;
   });
+  // Splits check + dynamic ticker fetch for watchlist
+  watchlist.forEach(function(ticker){
+    finnhubSplits(ticker).then(function(sp){renderSplitWarning(ticker,sp);});
+    if(!PORTFOLIO_ASSETS.find(function(a){return a.ticker===ticker;})){
+      Promise.allSettled([finnhubQuote(ticker),finnhubCandles(ticker,30),finnhubProfile(ticker)]).then(function(res){
+        var q=res[0].status==="fulfilled"?res[0].value:null;
+        var c=res[1].status==="fulfilled"?res[1].value:null;
+        var nm=res[2].status==="fulfilled"?res[2].value:ticker;
+        var ne=document.getElementById("name-"+ticker);if(ne)ne.textContent=nm||ticker;
+        if(q){
+          quoteData[ticker]=q;
+          var pe=document.getElementById("price-"+ticker);if(pe)pe.textContent=fmtUSD(q.price);
+          var ce=document.getElementById("change-"+ticker);if(ce){ce.textContent=fmtPct(q.changePct)+" ("+fmtUSD(Math.abs(q.change))+")";ce.className="card-change "+(q.changePct>=0?"up":"down");}
+          var he=document.getElementById("hlp-"+ticker);if(he){he.style.display="flex";document.getElementById("high-"+ticker).textContent=fmtUSD(q.high);document.getElementById("low-"+ticker).textContent=fmtUSD(q.low);document.getElementById("prev-"+ticker).textContent=fmtUSD(q.prev);}
+        }
+        if(c&&c.closes&&c.closes.length>1){
+          drawSparkline("spark-"+ticker,c.closes);
+          var m7=maSimple(c.closes,7),m20=maSimple(c.closes,20);
+          var me=document.getElementById("ma-"+ticker);if(me)me.innerHTML=(m7?"<span class=\"ma-label\">MA7 <span style=\"color:#a3e635;font-family:var(--mono)\">"+fmtUSD(m7)+"</span></span>":"")+(m20?"<span class=\"ma-label\">MA20 <span style=\"color:#60a5fa;font-family:var(--mono)\">"+fmtUSD(m20)+"</span></span>":"");
+          if(m7&&m20){var b=document.getElementById("trend-"+ticker);if(b){b.textContent=m7>m20?"BULLISH":"BEARISH";b.className="trend-badge "+(m7>m20?"trend-bull":"trend-bear");b.style.display="inline";}}
+        }
+      });
+    }
+  });
   btcQuote = results[n*2].status==='fulfilled' ? results[n*2].value : null;
   updateMacroBTC();
   PORTFOLIO_ASSETS.forEach(a => updateCard(a));
@@ -792,41 +857,6 @@ function updateMacroBTC() {
   el.querySelector('.macro-item-desc').textContent = `BTC ${up?'+':''}${fmt(btcQuote.changePct,2)}% — drives MARA momentum`;
 }
 
-function buildCards() {
-  document.getElementById('cards-grid').innerHTML = PORTFOLIO_ASSETS.map(a=>`
-    <div class="card" id="card-${a.ticker}" style="border-color:${a.color}33">
-      <div class="card-header">
-        <div class="card-left">
-          <div class="icon-badge" style="color:${a.color};border-color:${a.color}55">${a.icon}</div>
-          <div>
-            <div><span class="card-ticker">${a.ticker}</span><span class="trend-badge" id="trend-${a.ticker}" style="display:none"></span></div>
-            <div class="card-name">${a.name}</div>
-          </div>
-        </div>
-        <div>
-          <div class="card-price" id="price-${a.ticker}"><div class="skel" style="width:80px;height:22px"></div></div>
-          <div class="card-change" id="change-${a.ticker}"></div>
-        </div>
-      </div>
-      <div class="platforms">${a.platforms.map(p=>`<span class="platform-badge">${p}</span>`).join('')}</div>
-      <div class="sparkline-wrap">
-        <svg id="spark-${a.ticker}" width="100%" height="40" viewBox="0 0 300 40" preserveAspectRatio="none"></svg>
-        <div class="sparkline-ma" id="ma-${a.ticker}"></div>
-      </div>
-      <div class="hlp-row" id="hlp-${a.ticker}" style="display:none">
-        <div><div class="hlp-label">Day High</div><div class="hlp-value up" id="high-${a.ticker}">—</div></div>
-        <div><div class="hlp-label">Day Low</div><div class="hlp-value down" id="low-${a.ticker}">—</div></div>
-        <div><div class="hlp-label">Prev Close</div><div class="hlp-value neutral" id="prev-${a.ticker}">—</div></div>
-      </div>
-      ${a.type==='metals-etf' ? buildDivBanner(a) : ''}
-      ${a.type==='metals-etf' ? `<div class="roc-note"><span style="color:var(--orange)">◈</span><span>Distribution may include <span style="color:var(--orange)">Return of Capital (ROC)</span> — not pure income. Verify before sizing.</span></div>` : ''}
-      ${a.type==='crypto-miner' ? `<div class="mara-panel"><div class="mara-panel-label">BTC Correlation</div><div class="mara-btc-row"><div><div class="mara-btc-sublabel">BTC Price</div><div class="mara-btc-val" id="btc-price">—</div></div><div><div class="mara-btc-sublabel">24h Change</div><div id="btc-change" style="font-family:var(--mono);font-size:13px;font-weight:700">—</div></div><div class="mara-btc-note">MARA tracks BTC sentiment — watch momentum for entry signals.</div></div></div>` : ''}
-      <button class="expand-btn" onclick="toggleNotes('${a.ticker}')">▼ Strategy Notes</button>
-      <div class="strategy-notes" id="notes-${a.ticker}">
-        ${a.notes.map(n=>`<p class="note-p"><span style="color:${n.hl};font-weight:600">${n.label}:</span> ${n.text}</p>`).join('')}
-      </div>
-    </div>`).join('');
-}
 
 function buildDivBanner(a) {
   if (!a.exDiv) return '';
@@ -2319,6 +2349,144 @@ function checkTargetsOnRefresh() {
   }
 }
 
+// ════════ WATCHLIST ════════
+var watchlist=JSON.parse(localStorage.getItem("mr_watchlist")||"null");
+if(!watchlist){watchlist=["KSLV","KGLD","MARA"];localStorage.setItem("mr_watchlist",JSON.stringify(watchlist));}
+
+function initWatchlist(){renderWatchlistChips();}
+
+function addWatchlistTicker(){
+  var inp=document.getElementById("wl-input");
+  var t=(inp.value||"").trim().toUpperCase().replace(/[^A-Z]/g,"");
+  if(!t||watchlist.includes(t)){inp.value="";return;}
+  if(watchlist.length>=20){alert("Max 20 tickers.");return;}
+  watchlist.push(t);localStorage.setItem("mr_watchlist",JSON.stringify(watchlist));
+  inp.value="";renderWatchlistChips();buildCards();refreshPortfolio();
+}
+
+function removeWatchlistTicker(t){
+  watchlist=watchlist.filter(function(x){return x!==t;});
+  localStorage.setItem("mr_watchlist",JSON.stringify(watchlist));
+  renderWatchlistChips();buildCards();refreshPortfolio();
+}
+
+function renderWatchlistChips(){
+  var w=document.getElementById("wl-chips"),c=document.getElementById("wl-count");
+  if(!w)return;
+  if(c)c.textContent=watchlist.length+"/20";
+  if(!watchlist.length){w.innerHTML="<span style=\"font-size:11px;color:var(--text3);font-style:italic\">No tickers.</span>";return;}
+  w.innerHTML=watchlist.map(function(t){
+    return ["<div class=\"wl-chip\">",
+      "<span class=\"wl-chip-text\">",t,"</span>",
+      "<button class=\"wl-chip-remove\" onclick=\"removeWatchlistTicker('",t,"')\">&times;</button>",
+      "</div>"].join("");
+  }).join("");
+}
+
+// ════════ CARD BUILDERS ════════
+function buildCards(){
+  var grid=document.getElementById("cards-grid");if(!grid)return;
+  grid.innerHTML="";
+  watchlist.forEach(function(ticker){
+    var asset=PORTFOLIO_ASSETS.find(function(a){return a.ticker===ticker;});
+    grid.innerHTML+=asset?buildKnownCardHTML(asset):buildDynamicCardHTML(ticker);
+  });
+}
+
+function cardBase(ticker,colorBorder,iconHTML,nameHTML,platformsHTML,extraHTML,notesHTML){
+  return ["<div class=\"card\" id=\"card-",ticker,"\" style=\"border-color:",colorBorder,"\">",
+    "<div class=\"card-header\"><div class=\"card-left\">",
+    "<div class=\"icon-badge\" style=\"color:",colorBorder,";border-color:",colorBorder,"55\">",iconHTML,"</div>",
+    "<div><div><span class=\"card-ticker\">",ticker,"</span>",
+    "<span class=\"trend-badge\" id=\"trend-",ticker,"\" style=\"display:none\"></span></div>",
+    "<div class=\"card-name\" id=\"name-",ticker,"\">",nameHTML,"</div></div></div>",
+    "<div><div class=\"card-price\" id=\"price-",ticker,"\"><div class=\"skel\" style=\"width:80px;height:22px\"></div></div>",
+    "<div class=\"card-change\" id=\"change-",ticker,"\"></div></div></div>",
+    platformsHTML,
+    "<div class=\"sparkline-wrap\"><svg id=\"spark-",ticker,"\" width=\"100%\" height=\"40\" viewBox=\"0 0 300 40\" preserveAspectRatio=\"none\"></svg>",
+    "<div class=\"sparkline-ma\" id=\"ma-",ticker,"\"></div></div>",
+    "<div class=\"hlp-row\" id=\"hlp-",ticker,"\" style=\"display:none\">",
+    "<div><div class=\"hlp-label\">Day High</div><div class=\"hlp-value up\" id=\"high-",ticker,"\">&#8212;</div></div>",
+    "<div><div class=\"hlp-label\">Day Low</div><div class=\"hlp-value down\" id=\"low-",ticker,"\">&#8212;</div></div>",
+    "<div><div class=\"hlp-label\">Prev Close</div><div class=\"hlp-value neutral\" id=\"prev-",ticker,"\">&#8212;</div></div></div>",
+    extraHTML,
+    "<div id=\"split-",ticker,"\"></div>",
+    notesHTML,
+    "<button class=\"news-btn\" onclick=\"toggleNews('",ticker,"')\">&blacktriangledown; Latest News</button>",
+    "<div class=\"news-panel\" id=\"news-",ticker,"\"></div>",
+    "</div>"].join("");
+}
+
+function buildKnownCardHTML(a){
+  var platforms=a.platforms.map(function(p){return "<span class=\"platform-badge\">"+p+"</span>";}).join("");
+  var extra="";
+  if(a.type==="metals-etf"){extra+=buildDivBanner(a);}
+  if(a.type==="metals-etf"){extra+='<div class="roc-note"><span style="color:var(--orange)">&#9670;</span><span>Distribution may include <span style="color:var(--orange)">Return of Capital (ROC)</span> &mdash; verify before sizing.</span></div>';}
+  if(a.type==="crypto-miner"){extra+='<div class="mara-panel"><div class="mara-panel-label">BTC Correlation</div><div class="mara-btc-row"><div><div class="mara-btc-sublabel">BTC Price</div><div class="mara-btc-val" id="btc-price">&#8212;</div></div><div><div class="mara-btc-sublabel">24h Change</div><div id="btc-change" style="font-family:var(--mono);font-size:13px;font-weight:700">&#8212;</div></div><div class="mara-btc-note">MARA tracks BTC sentiment.</div></div></div>';}
+  var notesBtn=["<button class=\"expand-btn\" onclick=\"toggleNotes('",a.ticker,"')\">&blacktriangledown; Strategy Notes</button>",
+    "<div class=\"strategy-notes\" id=\"notes-",a.ticker,"\">",
+    a.notes.map(function(n){return "<p class=\"note-p\"><span style=\"color:"+n.hl+";font-weight:600\">"+n.label+":</span> "+n.text+"</p>";}).join(""),
+    "</div>"].join("");
+  return cardBase(a.ticker,a.color+"33",a.icon,a.name,'<div class="platforms">'+platforms+"</div>",extra,notesBtn);
+}
+
+function buildDynamicCardHTML(ticker){
+  return cardBase(ticker,"var(--border2)","&#9672;","Loading&hellip;","","","");
+}
+
+// ════════ SPLITS ════════
+async function finnhubSplits(sym){
+  try{
+    var from=new Date(Date.now()-30*86400000).toISOString().slice(0,10);
+    var to=new Date(Date.now()+90*86400000).toISOString().slice(0,10);
+    var r=await fetch("https://finnhub.io/api/v1/stock/split?symbol="+encodeURIComponent(sym)+"&from="+from+"&to="+to+"&token="+API_KEY);
+    var d=await r.json();return Array.isArray(d)?d:[];
+  }catch(e){return [];}
+}
+
+function renderSplitWarning(ticker,splits){
+  var el=document.getElementById("split-"+ticker);
+  if(!el||!splits.length)return;
+  el.innerHTML="";
+  splits.forEach(function(s){
+    var isRev=s.toFactor<s.fromFactor;
+    el.innerHTML+=["<div class=\"split-warn ",isRev?"split-rev":"split-fwd","\">",
+      "<span>",isRev?"&#9888;":"&#8505;","</span>",
+      "<span><strong>",isRev?"REVERSE SPLIT":"FORWARD SPLIT","</strong> ",
+      s.fromFactor,":",s.toFactor," on ",s.date,". ",
+      isRev?"May indicate NAV erosion &mdash; review position carefully.":"Generally neutral to positive.",
+      "</span></div>"].join("");
+  });
+}
+
+// ════════ NEWS ════════
+var newsCache={};
+async function toggleNews(ticker){
+  var panel=document.getElementById("news-"+ticker);
+  var btn=panel?panel.previousElementSibling:null;
+  if(!panel)return;
+  var isOpen=panel.classList.toggle("open");
+  if(btn)btn.textContent=isOpen?"&#9650; Hide News":"&#9660; Latest News";
+  if(!isOpen)return;
+  if(newsCache[ticker]){panel.innerHTML=newsCache[ticker];return;}
+  panel.innerHTML="<div style=\"font-family:var(--mono);font-size:10px;color:var(--text3)\">Loading news&hellip;</div>";
+  try{
+    var toD=new Date().toISOString().slice(0,10);
+    var frD=new Date(Date.now()-7*86400000).toISOString().slice(0,10);
+    var r=await fetch("https://finnhub.io/api/v1/company-news?symbol="+encodeURIComponent(ticker)+"&from="+frD+"&to="+toD+"&token="+API_KEY);
+    var d=await r.json();
+    if(!Array.isArray(d)||!d.length){panel.innerHTML="<div style=\"font-size:11px;color:var(--text3);font-style:italic\">No recent news found.</div>";return;}
+    var h=d.slice(0,6).map(function(item){
+      var dt=new Date(item.datetime*1000).toLocaleDateString("en-US",{month:"short",day:"numeric"});
+      var url=(item.url||"").replace(/"/g,"");
+      return ["<div class=\"news-item\">",
+        "<div class=\"news-headline\" onclick=\"window.open('",url,"','_blank')\">",item.headline,"</div>",
+        "<div class=\"news-meta\"><span class=\"news-src\">",item.source||"","</span> &middot; ",dt,"</div>",
+        "</div>"].join("");
+    }).join("");
+    newsCache[ticker]=h;panel.innerHTML=h;
+  }catch(e){panel.innerHTML="<div style=\"font-size:11px;color:var(--red)\">Could not load news.</div>";}
+}
 </script>
 </body>
 </html>
