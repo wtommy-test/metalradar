@@ -388,6 +388,61 @@ body::before {
 
   .dividend-row{border:1px solid var(--border);border-radius:5px;padding:12px 14px;margin-bottom:8px;border-left:3px solid var(--gold)}
   .badge-dividend{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 8px;border-radius:3px;letter-spacing:.1em;background:rgba(212,175,55,0.12);color:var(--gold);border:1px solid rgba(212,175,55,0.3)}
+
+  /* ── TRADE PATIENCE TRACKER ── */
+  .patience-card { background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:16px; margin-bottom:10px; }
+  .patience-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
+  .patience-ticker { font-family:var(--mono); font-size:16px; font-weight:700; letter-spacing:0.08em; }
+  .patience-status { font-family:var(--mono); font-size:9px; letter-spacing:0.12em; text-transform:uppercase; }
+  .patience-day-counter { text-align:center; margin-bottom:14px; }
+  .patience-day-num { font-family:var(--mono); font-size:36px; font-weight:700; color:var(--gold); line-height:1; }
+  .patience-day-label { font-family:var(--mono); font-size:9px; color:var(--text3); letter-spacing:0.1em; margin-top:2px; }
+  .patience-progress-wrap { margin-bottom:12px; }
+  .patience-progress-labels { display:flex; justify-content:space-between; font-family:var(--mono); font-size:9px; color:var(--text3); margin-bottom:4px; }
+  .patience-progress-track { background:var(--border); border-radius:10px; height:8px; overflow:hidden; }
+  .patience-progress-fill { height:100%; border-radius:10px; transition:width 0.8s ease; }
+  .patience-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+  .patience-stat { background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:8px; text-align:center; }
+  .patience-stat-label { font-family:var(--mono); font-size:8px; color:var(--text3); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:3px; }
+  .patience-stat-val { font-family:var(--mono); font-size:12px; font-weight:700; }
+  .patience-thesis { background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:10px 12px; margin-bottom:10px; }
+  .patience-thesis-label { font-family:var(--mono); font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px; }
+  .patience-thesis-text { font-size:12px; color:var(--text2); font-style:italic; line-height:1.5; }
+  .patience-discipline { border-radius:4px; padding:10px 12px; margin-bottom:10px; border:1px solid; }
+  .patience-discipline.on-track { background:rgba(74,222,128,0.05); border-color:rgba(74,222,128,0.25); }
+  .patience-discipline.early { background:rgba(251,191,36,0.05); border-color:rgba(251,191,36,0.25); }
+  .patience-discipline.overdue { background:rgba(248,113,113,0.05); border-color:rgba(248,113,113,0.25); }
+  .patience-discipline-q { font-family:var(--mono); font-size:10px; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:4px; }
+  .patience-discipline-a { font-size:11px; font-style:italic; line-height:1.5; }
+
+  /* SNAPSHOT UPLOAD */
+  .snapshot-wrap { margin-bottom:10px; }
+  .snapshot-upload-btn { background:transparent; border:1px dashed var(--border2); color:var(--text3); font-family:var(--mono); font-size:10px; letter-spacing:0.1em; padding:10px; border-radius:4px; cursor:pointer; width:100%; text-align:center; transition:all 0.2s; }
+  .snapshot-upload-btn:hover { border-color:var(--gold); color:var(--gold); }
+  .snapshot-img { width:100%; border-radius:4px; margin-top:6px; border:1px solid var(--border); display:block; }
+  .snapshot-remove { background:transparent; border:none; color:var(--text3); font-family:var(--mono); font-size:9px; cursor:pointer; margin-top:4px; }
+  .snapshot-remove:hover { color:var(--red); }
+
+  /* THESIS FORM */
+  .thesis-form { background:var(--surface); border:1px solid var(--border); border-radius:5px; padding:14px; margin-bottom:14px; }
+  .thesis-form-title { font-family:var(--mono); font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:10px; }
+  .thesis-row { display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+  .thesis-group { display:flex; flex-direction:column; flex:1; min-width:120px; }
+  .thesis-label { font-family:var(--mono); font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px; }
+  .thesis-input { background:var(--bg); border:1px solid var(--border2); color:var(--text); font-family:var(--mono); font-size:12px; padding:8px 10px; border-radius:4px; outline:none; width:100%; transition:border-color 0.2s; }
+  .thesis-input:focus { border-color:var(--gold); }
+  .thesis-textarea { background:var(--bg); border:1px solid var(--border2); color:var(--text); font-family:var(--serif); font-size:12px; padding:8px 10px; border-radius:4px; outline:none; width:100%; resize:none; height:60px; transition:border-color 0.2s; }
+  .thesis-textarea:focus { border-color:var(--gold); }
+  .thesis-save-btn { background:var(--gold); border:none; color:#000; font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:0.15em; padding:9px; border-radius:4px; cursor:pointer; width:100%; margin-top:4px; }
+
+  /* EXIT REVIEW */
+  .exit-review { background:var(--surface); border:1px solid var(--border); border-radius:5px; padding:14px; margin-bottom:10px; }
+  .exit-review-label { font-family:var(--mono); font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:10px; }
+  .exit-q { font-size:12px; color:var(--text2); margin-bottom:6px; }
+  .exit-options { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+  .exit-opt { background:var(--surface2); border:1px solid var(--border2); color:var(--text3); font-family:var(--mono); font-size:10px; padding:5px 10px; border-radius:3px; cursor:pointer; transition:all 0.2s; }
+  .exit-opt.selected { border-color:var(--gold); color:var(--gold); background:rgba(212,175,55,0.08); }
+
 </style>
 </head>
 <body>
@@ -588,6 +643,20 @@ body::before {
         </div>
       </div>
 
+
+      <!-- TRADE PATIENCE TRACKER -->
+      <div class="panel" style="margin-bottom:14px" id="patience-panel">
+        <div class="section-label">Trade Patience Tracker</div>
+        <div style="font-size:11px;color:var(--text3);font-style:italic;margin-bottom:12px">
+          Build your trade thesis. Track your discipline. Review your exit.
+        </div>
+
+        <!-- THESIS FORM for open positions -->
+        <div id="patience-thesis-forms"></div>
+
+        <!-- ACTIVE PATIENCE CARDS -->
+        <div id="patience-cards"></div>
+      </div>
 
       <!-- TARGET PRICE PANEL -->
       <div class="panel" style="margin-bottom:14px">
@@ -2092,6 +2161,7 @@ function initJournal() {
   renderTradeHistory();
   renderCycleAnalysis();
   renderTargets();
+  renderPatienceTracker();
 }
 
 function logTrade() {
@@ -2125,6 +2195,7 @@ function logTrade() {
 
   renderTradeHistory();
   renderCycleAnalysis();
+  renderPatienceTracker();
 }
 
 function deleteTrade(id) {
@@ -2164,7 +2235,7 @@ function renderTradeHistory() {
     return '<div class="trade-row ' + (isBuy?'buy-row':'sell-row') + '">'
       + '<div class="trade-row-header">'
       + '<div class="trade-row-left">'
-      + '<span class="trade-action-badge ' + (isBuy?'badge-buy':'badge-sell') + '">' + (isBuy?'BUY IN':'SELL OUT') + '</span>'
+      + '<span class="trade-action-badge ' + badgeClass + '">' + badgeLabel + '</span>'
       + '<span class="trade-ticker-label">' + t.ticker + '</span>'
       + '</div>'
       + '<div style="display:flex;align-items:flex-start;gap:10px">'
@@ -2737,6 +2808,205 @@ function updateJournalForm() {
     if (sl) sl.textContent = 'Shares';
     if (pi) pi.placeholder = '0.00';
   }
+}
+
+
+// ════════════════════════════════════════════════════════
+// TRADE PATIENCE TRACKER
+// ════════════════════════════════════════════════════════
+var thesisData = JSON.parse(localStorage.getItem('mr_thesis') || '{}');
+// Structure: { 'KSLV_2026-05-20': { why, holdDays, target, invalidation, snapshot, exitReview } }
+
+function thesisKey(ticker, buyDate) { return ticker + '_' + buyDate; }
+
+function saveThesis(key, data) {
+  thesisData[key] = Object.assign(thesisData[key] || {}, data);
+  localStorage.setItem('mr_thesis', JSON.stringify(thesisData));
+}
+
+function renderPatienceTracker() {
+  var formsEl = document.getElementById('patience-thesis-forms');
+  var cardsEl = document.getElementById('patience-cards');
+  if (!formsEl || !cardsEl) return;
+
+  // Find all open buy positions
+  var openPositions = {};
+  trades.forEach(function(t) {
+    if (t.action === 'buy') {
+      if (!openPositions[t.ticker]) openPositions[t.ticker] = [];
+      openPositions[t.ticker].push(t);
+    } else if (t.action === 'sell') {
+      // Mark as closed
+      if (openPositions[t.ticker] && openPositions[t.ticker].length) {
+        openPositions[t.ticker].shift();
+      }
+    }
+  });
+
+  var formsHTML = '';
+  var cardsHTML = '';
+
+  Object.keys(openPositions).forEach(function(ticker) {
+    openPositions[ticker].forEach(function(buyTrade) {
+      var key = thesisKey(ticker, buyTrade.date);
+      var thesis = thesisData[key] || {};
+      var currentPrice = quoteData[ticker] ? quoteData[ticker].price : null;
+      var daysSince = Math.round((new Date() - new Date(buyTrade.date)) / 86400000);
+      var plannedDays = parseInt(thesis.holdDays) || 14;
+      var target = parseFloat(thesis.target) || null;
+      var pctToTarget = target && currentPrice ? ((target - currentPrice) / currentPrice * 100) : null;
+      var pctGain = currentPrice ? ((currentPrice - buyTrade.price) / buyTrade.price * 100) : null;
+      var cycleProgress = Math.min(100, Math.round((daysSince / plannedDays) * 100));
+      var progressColor = cycleProgress < 50 ? 'var(--green)' : cycleProgress < 85 ? 'var(--amber)' : 'var(--red)';
+
+      // Discipline message
+      var discClass = 'on-track', discQ = 'HAS THE THESIS CHANGED, OR ARE YOU JUST UNCOMFORTABLE?', discA = '';
+      if (daysSince < plannedDays * 0.3) {
+        discClass = 'early';
+        discA = 'You are early in the planned hold period. The cycle data suggested ' + plannedDays + ' days. Give it time to develop before reconsidering.';
+      } else if (daysSince >= plannedDays) {
+        discClass = 'overdue';
+        discA = 'You have reached or exceeded your planned hold period of ' + plannedDays + ' days. Review your exit criteria — is your target reached or has the thesis changed?';
+      } else {
+        discA = 'You are on track with your plan. Day ' + daysSince + ' of ' + plannedDays + '. Stay disciplined — do not let short-term price noise override your original thesis.';
+      }
+
+      // Build thesis form if not filled
+      if (!thesis.why) {
+        formsHTML += '<div class="thesis-form" id="thesis-form-' + key + '">'
+          + '<div class="thesis-form-title">' + ticker + ' — Build Your Trade Thesis</div>'
+          + '<div class="thesis-row">'
+          + '<div class="thesis-group"><div class="thesis-label">Planned Hold (days)</div><input class="thesis-input" type="number" id="th-hold-' + key + '" placeholder="14" value="' + (thesis.holdDays||'14') + '" /></div>'
+          + '<div class="thesis-group"><div class="thesis-label">Exit Target ($)</div><input class="thesis-input" type="number" id="th-target-' + key + '" placeholder="38.00" value="' + (thesis.target||'') + '" /></div>'
+          + '</div>'
+          + '<div class="thesis-row">'
+          + '<div class="thesis-group"><div class="thesis-label">Invalidation Point ($)</div><input class="thesis-input" type="number" id="th-invalid-' + key + '" placeholder="30.50" value="' + (thesis.invalidation||'') + '" /></div>'
+          + '</div>'
+          + '<div style="margin-bottom:8px"><div class="thesis-label">Why did you enter this trade?</div>'
+          + '<textarea class="thesis-textarea" id="th-why-' + key + '" placeholder="e.g. Near cycle low, Wave Score 96, post-div rebound expected...">' + (thesis.why||'') + '</textarea></div>'
+          + '<div style="margin-bottom:8px"><div class="thesis-label">Chart Snapshot at Entry (optional)</div>'
+          + '<input type="file" id="th-snap-' + key + '" accept="image/*" style="display:none" onchange="handleSnapshot(\'' + key + '\')" />'
+          + '<button class="snapshot-upload-btn" onclick="document.getElementById(\'th-snap-' + key + '\').click()">&#128247; Upload Chart Screenshot</button>'
+          + (thesis.snapshot ? '<img src="' + thesis.snapshot + '" class="snapshot-img" /><button class="snapshot-remove" onclick="removeSnapshot(\'' + key + '\')">Remove snapshot</button>' : '<div id="snap-preview-' + key + '"></div>')
+          + '</div>'
+          + '<button class="thesis-save-btn" onclick="saveThesisForm(\'' + key + '\')">SAVE THESIS</button>'
+          + '</div>';
+      }
+
+      // Build patience card
+      cardsHTML += '<div class="patience-card">'
+        + '<div class="patience-header">'
+        + '<div><div class="patience-ticker">' + ticker + '</div><div style="font-size:11px;color:var(--text3);font-style:italic">Entry ' + fmtUSD(buyTrade.price) + ' on ' + buyTrade.date + '</div></div>'
+        + '<div style="text-align:right"><div class="patience-stat-val" style="font-size:16px;color:' + (pctGain>=0?'var(--green)':'var(--red)') + '">' + (pctGain!==null?(pctGain>=0?'+':'')+fmt(pctGain)+'%':'—') + '</div><div style="font-size:10px;color:var(--text3)">current P&L</div></div>'
+        + '</div>'
+
+        // Day counter
+        + '<div class="patience-day-counter">'
+        + '<div class="patience-day-num">' + daysSince + '</div>'
+        + '<div class="patience-day-label">DAY' + (daysSince!==1?'S':'') + ' IN TRADE &mdash; PLANNED ' + plannedDays + ' DAYS</div>'
+        + '</div>'
+
+        // Progress bar
+        + '<div class="patience-progress-wrap">'
+        + '<div class="patience-progress-labels"><span>Entry</span><span>' + cycleProgress + '% of plan</span><span>Day ' + plannedDays + '</span></div>'
+        + '<div class="patience-progress-track"><div class="patience-progress-fill" style="width:' + cycleProgress + '%;background:' + progressColor + '"></div></div>'
+        + '</div>'
+
+        // Stats
+        + '<div class="patience-stats">'
+        + '<div class="patience-stat"><div class="patience-stat-label">Entry</div><div class="patience-stat-val">' + fmtUSD(buyTrade.price) + '</div></div>'
+        + '<div class="patience-stat"><div class="patience-stat-label">Current</div><div class="patience-stat-val">' + (currentPrice?fmtUSD(currentPrice):'—') + '</div></div>'
+        + '<div class="patience-stat"><div class="patience-stat-label">Target</div><div class="patience-stat-val" style="color:var(--gold)">' + (target?fmtUSD(target):'—') + '</div></div>'
+        + '</div>'
+
+        // To target
+        + (pctToTarget!==null ? '<div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:10px;text-align:center">' + (pctToTarget>0?'&#9650; '+fmt(pctToTarget)+'% remaining to target':'&#9646; Target reached or exceeded') + '</div>' : '')
+
+        // Discipline check
+        + '<div class="patience-discipline ' + discClass + '">'
+        + '<div class="patience-discipline-q" style="color:' + (discClass==='on-track'?'var(--green)':discClass==='early'?'var(--amber)':'var(--red)') + '">' + discQ + '</div>'
+        + '<div class="patience-discipline-a">' + discA + '</div>'
+        + '</div>'
+
+        // Thesis display
+        + (thesis.why ? '<div class="patience-thesis"><div class="patience-thesis-label">Your Original Thesis</div><div class="patience-thesis-text">"' + thesis.why + '"</div>'
+          + (thesis.invalidation ? '<div style="font-family:var(--mono);font-size:9px;color:var(--red);margin-top:6px">Invalidation: below ' + fmtUSD(parseFloat(thesis.invalidation)) + '</div>' : '')
+          + '</div>' : '')
+
+        // Snapshot
+        + (thesis.snapshot ? '<div class="snapshot-wrap"><div class="thesis-label" style="margin-bottom:4px">Entry Chart Snapshot</div><img src="' + thesis.snapshot + '" class="snapshot-img" /></div>' : '')
+
+        // Edit thesis button
+        + '<button class="expand-btn" onclick="editThesis(\'' + key + '\')" style="margin-top:4px">&#9998; ' + (thesis.why?'Edit':'Add') + ' Trade Thesis</button>'
+        + '</div>';
+    });
+  });
+
+  formsEl.innerHTML = formsHTML;
+  cardsEl.innerHTML = cardsHTML || '<div style="font-size:12px;color:var(--text3);font-style:italic">No open positions found. Log a BUY IN trade to start tracking.</div>';
+}
+
+function saveThesisForm(key) {
+  var hold = document.getElementById('th-hold-' + key);
+  var target = document.getElementById('th-target-' + key);
+  var invalid = document.getElementById('th-invalid-' + key);
+  var why = document.getElementById('th-why-' + key);
+  saveThesis(key, {
+    holdDays: hold ? hold.value : '14',
+    target: target ? target.value : '',
+    invalidation: invalid ? invalid.value : '',
+    why: why ? why.value : '',
+  });
+  renderPatienceTracker();
+  renderCycleAnalysis();
+}
+
+function editThesis(key) {
+  // Clear the why to show the form again
+  var thesis = thesisData[key] || {};
+  thesis._editing = true;
+  thesisData[key] = thesis;
+  // Re-render with form visible
+  var formsEl = document.getElementById('patience-thesis-forms');
+  if (formsEl) {
+    // Temporarily delete why to show form
+    var savedWhy = thesis.why;
+    thesis.why = '';
+    localStorage.setItem('mr_thesis', JSON.stringify(thesisData));
+    renderPatienceTracker();
+    // Restore
+    thesis.why = savedWhy;
+  }
+}
+
+function handleSnapshot(key) {
+  var input = document.getElementById('th-snap-' + key);
+  if (!input || !input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    // Compress to thumbnail max 400px wide
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      var maxW = 600;
+      var scale = Math.min(1, maxW / img.width);
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      var dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+      saveThesis(key, { snapshot: dataUrl });
+      var preview = document.getElementById('snap-preview-' + key);
+      if (preview) preview.innerHTML = '<img src="' + dataUrl + '" class="snapshot-img" />';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function removeSnapshot(key) {
+  if (thesisData[key]) { delete thesisData[key].snapshot; localStorage.setItem('mr_thesis', JSON.stringify(thesisData)); }
+  renderPatienceTracker();
 }
 
 </script>
