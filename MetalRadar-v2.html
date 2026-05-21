@@ -385,6 +385,9 @@ body::before {
   .sr-alert.at-support { color:var(--green); background:rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.35); font-weight:600; }
   .sr-alert.at-resistance { color:var(--red); background:rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.35); font-weight:600; }
 
+
+  .dividend-row{border:1px solid var(--border);border-radius:5px;padding:12px 14px;margin-bottom:8px;border-left:3px solid var(--gold)}
+  .badge-dividend{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 8px;border-radius:3px;letter-spacing:.1em;background:rgba(212,175,55,0.12);color:var(--gold);border:1px solid rgba(212,175,55,0.3)}
 </style>
 </head>
 <body>
@@ -552,7 +555,7 @@ body::before {
             </div>
             <div class="jf-group">
               <div class="jf-label">Action</div>
-              <select class="jf-input" id="jf-action">
+              <select class="jf-input" id="jf-action" onchange="updateJournalForm()">
                 <option value="buy">BUY IN</option>
                 <option value="sell">SELL OUT</option>
               </select>
@@ -560,11 +563,11 @@ body::before {
           </div>
           <div class="jf-row">
             <div class="jf-group">
-              <div class="jf-label">Price</div>
+              <div class="jf-label" id="jf-price-label">Price</div>
               <input class="jf-input" type="number" id="jf-price" placeholder="0.00" step="0.01" />
             </div>
             <div class="jf-group">
-              <div class="jf-label">Shares</div>
+              <div class="jf-label" id="jf-shares-label">Shares</div>
               <input class="jf-input" type="number" id="jf-shares" placeholder="0" step="1" />
             </div>
           </div>
@@ -2103,10 +2106,11 @@ function logTrade() {
     return;
   }
 
+  var tradeTotal = action === 'dividend' ? price : price * shares;
   const trade = {
     id: Date.now(),
     ticker, action, price, shares, date, notes,
-    total: price * shares,
+    total: tradeTotal,
   };
 
   trades.unshift(trade);
@@ -2145,8 +2149,17 @@ function renderTradeHistory() {
     return;
   }
   el.innerHTML = trades.map(t => {
-    const isBuy = t.action === 'buy';
-    const total = (t.price * t.shares).toFixed(2);
+    var isBuy = t.action === 'buy';
+    var isSell = t.action === 'sell';
+    var isDividend = t.action === 'dividend';
+    var rowClass = isDividend ? 'dividend-row' : isBuy ? 'buy-row' : 'sell-row';
+    var badgeClass = isDividend ? 'badge-dividend' : isBuy ? 'badge-buy' : 'badge-sell';
+    var badgeLabel = isDividend ? 'DIVIDEND' : isBuy ? 'BUY IN' : 'SELL OUT';
+    var dispPrice = isDividend ? fmtUSD(t.total||t.price) : fmtUSD(t.price);
+    var dispShares = isDividend ? (t.shares + ' shares held') : (t.shares + ' shares');
+    var totalLabel = isDividend ? 'Income received:' : isBuy ? 'Capital deployed:' : 'Proceeds:';
+    var totalAmt = isDividend ? fmtUSD(t.total||t.price) : fmtUSD(t.price * t.shares);
+    var priceColor = isDividend ? 'var(--gold)' : 'var(--text)';
     return '<div class="trade-row ' + (isBuy?'buy-row':'sell-row') + '">'
       + '<div class="trade-row-header">'
       + '<div class="trade-row-left">'
@@ -2154,12 +2167,12 @@ function renderTradeHistory() {
       + '<span class="trade-ticker-label">' + t.ticker + '</span>'
       + '</div>'
       + '<div style="display:flex;align-items:flex-start;gap:10px">'
-      + '<div><div class="trade-price-label">' + fmtUSD(t.price) + '</div><div class="trade-shares-label">' + t.shares + ' shares</div></div>'
+      + '<div><div class="trade-price-label" style="color:' + priceColor + '">' + dispPrice + '</div><div class="trade-shares-label">' + dispShares + '</div></div>'
       + '<button class="trade-delete" onclick="deleteTrade(' + t.id + ')">✕</button>'
       + '</div>'
       + '</div>'
       + '<div class="trade-date-label">' + t.date + '</div>'
-      + '<div class="trade-total">' + (isBuy?'Capital deployed:':'Proceeds:') + ' $' + total + '</div>'
+      + '<div class="trade-total">' + totalLabel + ' ' + totalAmt + '</div>'
       + (t.notes ? '<div class="trade-notes">"' + t.notes + '"</div>' : '')
       + '</div>';
   }).join('');
@@ -2215,6 +2228,10 @@ function renderCycleAnalysis() {
     // Completed cycles
     cycles.forEach((cycle, i) => {
       const gainPct = ((cycle.sell.price - cycle.buy.price) / cycle.buy.price) * 100;
+      // Sum dividends received during this cycle
+      var divIncome = trades.filter(function(tr){
+        return tr.ticker===ticker && tr.action==='dividend' && tr.date>=cycle.buy.date && tr.date<=cycle.sell.date;
+      }).reduce(function(s,tr){return s+(tr.total||0);},0);
       const gainUSD = (cycle.sell.price - cycle.buy.price) * Math.min(cycle.buy.shares, cycle.sell.shares);
       const holdDays = Math.round((new Date(cycle.sell.date) - new Date(cycle.buy.date)) / 86400000);
       totalCycles++;
@@ -2262,8 +2279,12 @@ function renderCycleAnalysis() {
         + '<div class="cycle-stats">'
         + '<div class="cycle-stat-item"><div class="cycle-stat-label">Entry</div><div class="cycle-stat-val">' + fmtUSD(cycle.buy.price) + '</div></div>'
         + '<div class="cycle-stat-item"><div class="cycle-stat-label">Exit</div><div class="cycle-stat-val">' + fmtUSD(cycle.sell.price) + '</div></div>'
-        + '<div class="cycle-stat-item"><div class="cycle-stat-label">P&L</div><div class="cycle-stat-val" style="color:' + (gainUSD>=0?'var(--green)':'var(--red)') + '">' + (gainUSD>=0?'+':'') + fmtUSD(Math.abs(gainUSD)) + '</div></div>'
+        + '<div class="cycle-stat-item"><div class="cycle-stat-label">Price P&L</div><div class="cycle-stat-val" style="color:' + (gainUSD>=0?'var(--green)':'var(--red)') + '">' + (gainUSD>=0?'+':'') + fmtUSD(Math.abs(gainUSD)) + '</div></div>'
         + '</div>'
+        + (divIncome>0 ? '<div style="display:flex;gap:8px;margin-bottom:10px">'
+          + '<div class="cycle-stat-item" style="flex:1"><div class="cycle-stat-label">Dividend Income</div><div class="cycle-stat-val" style="color:var(--gold)">+' + fmtUSD(divIncome) + '</div></div>'
+          + '<div class="cycle-stat-item" style="flex:1"><div class="cycle-stat-label">Total Return</div><div class="cycle-stat-val" style="color:var(--green)">+' + fmtUSD(gainUSD+divIncome) + '</div></div>'
+          + '</div>' : '')
         + '<div class="timing-feedback ' + feedbackClass + '">' + feedbackText + '</div>'
         + '</div>';
     });
@@ -2697,6 +2718,23 @@ function computeAndRenderSR(ticker, currentPrice, closes) {
   if (sr) {
     srCache[ticker] = sr;
     renderSRPanel(ticker, currentPrice, sr);
+  }
+}
+
+
+function updateJournalForm() {
+  var action = document.getElementById('jf-action').value;
+  var pl = document.getElementById('jf-price-label');
+  var sl = document.getElementById('jf-shares-label');
+  var pi = document.getElementById('jf-price');
+  if (action === 'dividend') {
+    if (pl) pl.textContent = 'Total Received ($)';
+    if (sl) sl.textContent = 'Shares Held';
+    if (pi) pi.placeholder = 'e.g. 75.00';
+  } else {
+    if (pl) pl.textContent = 'Price';
+    if (sl) sl.textContent = 'Shares';
+    if (pi) pi.placeholder = '0.00';
   }
 }
 
