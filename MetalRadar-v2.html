@@ -443,6 +443,30 @@ body::before {
   .exit-opt { background:var(--surface2); border:1px solid var(--border2); color:var(--text3); font-family:var(--mono); font-size:10px; padding:5px 10px; border-radius:3px; cursor:pointer; transition:all 0.2s; }
   .exit-opt.selected { border-color:var(--gold); color:var(--gold); background:rgba(212,175,55,0.08); }
 
+
+  /* ── WHEN NOT TO TRADE ── */
+  .wnt-panel { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:16px; margin-bottom:14px; }
+  .wnt-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; cursor:pointer; }
+  .wnt-title { font-family:var(--mono); font-size:9px; letter-spacing:0.2em; color:var(--text3); text-transform:uppercase; }
+  .wnt-subtitle { font-size:11px; color:var(--text3); font-style:italic; margin-bottom:12px; }
+  .wnt-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+  .wnt-item { display:flex; align-items:flex-start; gap:8px; background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:10px 12px; cursor:pointer; transition:all 0.2s; }
+  .wnt-item:hover { border-color:var(--border2); }
+  .wnt-item.flagged { background:rgba(248,113,113,0.06); border-color:rgba(248,113,113,0.3); }
+  .wnt-checkbox { width:16px; height:16px; border:1px solid var(--border2); border-radius:3px; flex-shrink:0; margin-top:2px; display:flex; align-items:center; justify-content:center; font-size:11px; transition:all 0.2s; }
+  .wnt-item.flagged .wnt-checkbox { background:var(--red); border-color:var(--red); color:#fff; }
+  .wnt-item-text { font-size:11px; color:var(--text2); line-height:1.45; }
+  .wnt-item.flagged .wnt-item-text { color:var(--red); }
+  .wnt-result { border-radius:5px; padding:12px 14px; text-align:center; border:1px solid; transition:all 0.3s; }
+  .wnt-result.clear { background:rgba(74,222,128,0.06); border-color:rgba(74,222,128,0.3); }
+  .wnt-result.caution { background:rgba(251,191,36,0.06); border-color:rgba(251,191,36,0.3); }
+  .wnt-result.stop { background:rgba(248,113,113,0.08); border-color:rgba(248,113,113,0.4); }
+  .wnt-result-label { font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.12em; margin-bottom:4px; }
+  .wnt-result-msg { font-size:11px; font-style:italic; line-height:1.5; }
+  .wnt-reset { background:transparent; border:1px solid var(--border2); color:var(--text3); font-family:var(--mono); font-size:9px; letter-spacing:0.1em; padding:5px 12px; border-radius:3px; cursor:pointer; margin-top:10px; transition:all 0.2s; }
+  .wnt-reset:hover { border-color:var(--border2); color:var(--text2); }
+  @media(max-width:480px){ .wnt-grid{ grid-template-columns:1fr; } }
+
 </style>
 </head>
 <body>
@@ -597,6 +621,27 @@ body::before {
   <!-- ══ JOURNAL TAB ══ -->
   <div class="tab-content" id="tab-journal">
     <div class="section-wrap">
+
+      <!-- WHEN NOT TO TRADE -->
+      <div class="wnt-panel">
+        <div class="wnt-header" onclick="toggleSection('wnt-body','wnt-chevron')">
+          <div>
+            <div class="wnt-title">Before You Trade &mdash; Checklist</div>
+          </div>
+          <span id="wnt-chevron" style="font-family:var(--mono);font-size:12px;color:var(--text3)">&#9660;</span>
+        </div>
+        <div id="wnt-body">
+          <div class="wnt-subtitle">Check any condition that applies right now. If flags appear, consider waiting.</div>
+          <div class="wnt-grid" id="wnt-grid">
+            <!-- injected by JS -->
+          </div>
+          <div class="wnt-result" id="wnt-result">
+            <div class="wnt-result-label" id="wnt-result-label"></div>
+            <div class="wnt-result-msg" id="wnt-result-msg"></div>
+          </div>
+          <button class="wnt-reset" onclick="resetWNT()">&#8635; Clear All</button>
+        </div>
+      </div>
 
       <!-- LOG A TRADE -->
       <div class="panel" style="margin-bottom:14px">
@@ -801,7 +846,7 @@ function switchTab(name, btn) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
-  if (name === 'journal') initJournal();
+  if (name === 'journal') { initJournal(); initWNT(); }
 }
 
 // ════════════════════════════════════════════════════════
@@ -2173,6 +2218,7 @@ function initJournal() {
   renderCycleAnalysis();
   renderTargets();
   renderPatienceTracker();
+  initWNT();
 }
 
 function logTrade() {
@@ -3029,6 +3075,91 @@ function toggleSection(bodyId, chevronId) {
   var isOpen = body.style.display !== 'none';
   body.style.display = isOpen ? 'none' : 'block';
   if (chev) chev.innerHTML = isOpen ? '&#9654;' : '&#9660;';
+}
+
+
+// ════════════════════════════════════════════════════════
+// WHEN NOT TO TRADE CHECKLIST
+// ════════════════════════════════════════════════════════
+const WNT_ITEMS = [
+  { id:'emotional',   text:'I am feeling emotional, anxious, or upset right now' },
+  { id:'revenge',     text:'I am trying to recover a recent loss quickly' },
+  { id:'fomo',        text:'I am entering because I fear missing a move' },
+  { id:'chasing',     text:'I am chasing a move that already happened' },
+  { id:'oversized',   text:'This position would be too large relative to my total capital' },
+  { id:'invalidation',text:'I have been ignoring my own invalidation point' },
+  { id:'noplan',      text:'I do not have a clear entry, target, and invalidation planned' },
+  { id:'tired',       text:'I am sleep deprived, distracted, or not thinking clearly' },
+  { id:'macro',       text:'Major macro news or Fed announcement is expected today' },
+  { id:'pressure',    text:'Someone else is pressuring me to make this trade' },
+];
+
+var wntState = {};
+
+function initWNT() {
+  var grid = document.getElementById('wnt-grid');
+  if (!grid) return;
+  grid.innerHTML = WNT_ITEMS.map(function(item) {
+    return '<div class="wnt-item" id="wnt-' + item.id + '" onclick="toggleWNT(\'' + item.id + '\')">'
+      + '<div class="wnt-checkbox" id="wnt-cb-' + item.id + '"></div>'
+      + '<div class="wnt-item-text">' + item.text + '</div>'
+      + '</div>';
+  }).join('');
+  updateWNTResult();
+}
+
+function toggleWNT(id) {
+  wntState[id] = !wntState[id];
+  var item = document.getElementById('wnt-' + id);
+  var cb   = document.getElementById('wnt-cb-' + id);
+  if (item) item.classList.toggle('flagged', wntState[id]);
+  if (cb)   cb.innerHTML = wntState[id] ? '&#10005;' : '';
+  updateWNTResult();
+}
+
+function resetWNT() {
+  wntState = {};
+  WNT_ITEMS.forEach(function(item) {
+    var el = document.getElementById('wnt-' + item.id);
+    var cb = document.getElementById('wnt-cb-' + item.id);
+    if (el) el.classList.remove('flagged');
+    if (cb) cb.innerHTML = '';
+  });
+  updateWNTResult();
+}
+
+function updateWNTResult() {
+  var flagCount = Object.values(wntState).filter(Boolean).length;
+  var resultEl = document.getElementById('wnt-result');
+  var labelEl  = document.getElementById('wnt-result-label');
+  var msgEl    = document.getElementById('wnt-result-msg');
+  if (!resultEl) return;
+
+  if (flagCount === 0) {
+    resultEl.className = 'wnt-result clear';
+    labelEl.style.color = 'var(--green)';
+    labelEl.textContent = '\u2713 CONDITIONS CLEAR';
+    msgEl.style.color = 'var(--text3)';
+    msgEl.textContent = 'No flags raised. If your thesis is sound and your plan is ready, you may proceed with discipline.';
+  } else if (flagCount === 1) {
+    resultEl.className = 'wnt-result caution';
+    labelEl.style.color = 'var(--amber)';
+    labelEl.textContent = '\u26A0 1 FLAG RAISED \u2014 PROCEED WITH CAUTION';
+    msgEl.style.color = 'var(--amber)';
+    msgEl.textContent = 'One condition is present. Acknowledge it consciously before proceeding. Consider waiting for it to resolve.';
+  } else if (flagCount <= 3) {
+    resultEl.className = 'wnt-result caution';
+    labelEl.style.color = 'var(--amber)';
+    labelEl.textContent = '\u26A0 ' + flagCount + ' FLAGS RAISED \u2014 HIGH CAUTION';
+    msgEl.style.color = 'var(--amber)';
+    msgEl.textContent = 'Multiple conditions are present. The odds of an emotional or impulsive decision are elevated. Strongly consider waiting.';
+  } else {
+    resultEl.className = 'wnt-result stop';
+    labelEl.style.color = 'var(--red)';
+    labelEl.textContent = '\u26D4 ' + flagCount + ' FLAGS \u2014 DO NOT TRADE NOW';
+    msgEl.style.color = 'var(--red)';
+    msgEl.textContent = 'Significant conditions are present. This is not the right moment. Step away, revisit your thesis when conditions clear, and return with a plan \u2014 not an impulse.';
+  }
 }
 
 </script>

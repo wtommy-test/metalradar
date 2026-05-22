@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MetalRadar — User Guide v2.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #D4AF37; --dark: #1a1a1a; --gray: #666; --lgray: #ccc;
+    --green: #2d6a4f; --red: #9b2226; --blue: #1d3557;
+    --bg: #fafaf8; --surface: #f5f4f0; --border: #e0ddd5;
+    --mono: 'Share Tech Mono', monospace;
+    --serif: 'Crimson Pro', Georgia, serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--dark);
+    font-family: var(--serif);
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  /* SIDEBAR NAV */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: 240px;
+    height: 100vh;
+    background: var(--dark);
+    overflow-y: auto;
+    padding: 20px 0;
+    z-index: 100;
+  }
+  .sidebar-logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    padding: 0 20px 16px;
+    border-bottom: 1px solid #333;
+    margin-bottom: 12px;
+  }
+  .sidebar-logo span { display:block; font-size:9px; color:#555; letter-spacing:0.15em; margin-top:3px; }
+  .nav-section { font-family:var(--mono); font-size:8px; letter-spacing:0.2em; color:#444; text-transform:uppercase; padding:10px 20px 4px; }
+  .nav-link { display:block; font-family:var(--mono); font-size:10px; color:#888; letter-spacing:0.05em; padding:5px 20px; text-decoration:none; transition:all 0.2s; border-left:2px solid transparent; }
+  .nav-link:hover { color:var(--gold); border-left-color:var(--gold); background:rgba(212,175,55,0.05); }
+
+  /* MAIN CONTENT */
+  .main { margin-left:240px; max-width:900px; padding:48px 56px; }
+
+  /* COVER */
+  .cover { text-align:center; padding:60px 0 80px; border-bottom:2px solid var(--gold); margin-bottom:60px; }
+  .cover-title { font-family:var(--mono); font-size:48px; font-weight:700; letter-spacing:0.25em; color:var(--dark); margin-bottom:8px; }
+  .cover-sub { font-family:var(--mono); font-size:16px; letter-spacing:0.2em; color:var(--gold); margin-bottom:24px; }
+  .cover-desc { font-style:italic; font-size:18px; color:var(--gray); margin-bottom:8px; }
+  .cover-ver { font-family:var(--mono); font-size:12px; color:var(--lgray); letter-spacing:0.1em; }
+  .cover-disclaimer { margin-top:32px; font-size:13px; color:var(--lgray); font-style:italic; border-top:1px solid var(--border); padding-top:16px; }
+
+  /* SECTION HEADERS */
+  h1 { font-family:var(--mono); font-size:22px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--dark); border-bottom:3px solid var(--gold); padding-bottom:10px; margin:60px 0 24px; }
+  h1:first-of-type { margin-top:0; }
+  h2 { font-family:var(--mono); font-size:14px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--blue); margin:36px 0 14px; border-left:3px solid var(--blue); padding-left:12px; }
+  h3 { font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--dark); margin:24px 0 10px; }
+
+  /* BODY TEXT */
+  p { margin-bottom:14px; font-size:16px; }
+  .intro { font-size:17px; color:var(--gray); font-style:italic; margin-bottom:20px; border-left:3px solid var(--gold); padding-left:16px; }
+
+  /* CALLOUTS */
+  .note { background:#fffdf0; border:1px solid var(--gold); border-left:4px solid var(--gold); border-radius:4px; padding:12px 16px; margin:16px 0; font-size:14px; color:#7a6520; }
+  .warning { background:#fff5f5; border:1px solid #f4a0a0; border-left:4px solid var(--red); border-radius:4px; padding:12px 16px; margin:16px 0; font-size:14px; color:var(--red); }
+  .tip { background:#f0faf4; border:1px solid #a0d4b4; border-left:4px solid var(--green); border-radius:4px; padding:12px 16px; margin:16px 0; font-size:14px; color:var(--green); }
+  .note::before { content:'ℹ  '; font-weight:700; }
+  .warning::before { content:'⚠  '; font-weight:700; }
+  .tip::before { content:'✓  '; font-weight:700; }
+
+  /* TABLES */
+  .ref-table { width:100%; border-collapse:collapse; margin:16px 0 24px; font-size:14px; }
+  .ref-table th { background:var(--dark); color:var(--gold); font-family:var(--mono); font-size:10px; letter-spacing:0.1em; text-transform:uppercase; padding:10px 14px; text-align:left; }
+  .ref-table td { padding:10px 14px; border-bottom:1px solid var(--border); vertical-align:top; }
+  .ref-table tr:nth-child(even) td { background:var(--surface); }
+  .ref-table tr:hover td { background:#f0ece0; }
+  .ref-table td:first-child { font-family:var(--mono); font-size:12px; font-weight:700; white-space:nowrap; }
+  .ref-table td.green { color:var(--green); }
+  .ref-table td.red { color:var(--red); }
+  .ref-table td.gold { color:#8a6d00; }
+  .ref-table td.blue { color:var(--blue); }
+  .ref-table td.gray { color:var(--gray); }
+
+  /* BULLETS */
+  ul { margin:10px 0 16px 24px; }
+  ul li { margin-bottom:6px; font-size:15px; }
+  ul li strong { color:var(--dark); }
+
+  /* QUOTE */
+  blockquote { border-left:3px solid var(--gold); padding:8px 20px; margin:20px 0; font-style:italic; color:var(--gold); font-size:18px; background:#fffdf5; border-radius:0 4px 4px 0; }
+
+  /* BADGE EXAMPLES */
+  .badge { display:inline-block; font-family:var(--mono); font-size:9px; font-weight:700; padding:2px 8px; border-radius:3px; letter-spacing:0.1em; margin-right:4px; vertical-align:middle; }
+  .badge-green { background:rgba(45,106,79,0.12); color:var(--green); border:1px solid rgba(45,106,79,0.3); }
+  .badge-red { background:rgba(155,34,38,0.12); color:var(--red); border:1px solid rgba(155,34,38,0.3); }
+  .badge-gold { background:rgba(212,175,55,0.15); color:#8a6d00; border:1px solid rgba(212,175,55,0.4); }
+  .badge-blue { background:rgba(29,53,87,0.1); color:var(--blue); border:1px solid rgba(29,53,87,0.3); }
+
+  /* SECTION DIVIDER */
+  .section-break { border:none; border-top:1px solid var(--border); margin:48px 0; }
+
+  /* FOOTER */
+  .doc-footer { margin-top:80px; padding-top:24px; border-top:2px solid var(--gold); text-align:center; font-family:var(--mono); font-size:11px; color:var(--lgray); letter-spacing:0.08em; }
+
+  /* PRINT */
+  @media print {
+    .sidebar { display:none; }
+    .main { margin-left:0; padding:24px; }
+    h1 { page-break-before:always; }
+    h1:first-of-type { page-break-before:avoid; }
+    .ref-table { font-size:12px; }
+  }
+
+  @media(max-width:768px) {
+    .sidebar { display:none; }
+    .main { margin-left:0; padding:24px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">METALRADAR<span>USER GUIDE v2.0</span></div>
+  <div class="nav-section">Overview</div>
+  <a class="nav-link" href="#philosophy">Philosophy</a>
+  <a class="nav-link" href="#start">Getting Started</a>
+  <div class="nav-section">Portfolio Tab</div>
+  <a class="nav-link" href="#watchlist">Watchlist</a>
+  <a class="nav-link" href="#macro">Macro Environment</a>
+  <a class="nav-link" href="#cards">Portfolio Cards</a>
+  <a class="nav-link" href="#sr">Support & Resistance</a>
+  <a class="nav-link" href="#rhythm">Dividend Rhythm</a>
+  <div class="nav-section">Scanner Tab</div>
+  <a class="nav-link" href="#profile">Trading Profile</a>
+  <a class="nav-link" href="#wavescore">Wave Score</a>
+  <a class="nav-link" href="#signals">Signals</a>
+  <a class="nav-link" href="#risk">Position Risk</a>
+  <a class="nav-link" href="#cycle">Natural Cycle</a>
+  <div class="nav-section">Journal Tab</div>
+  <a class="nav-link" href="#logtrade">Log a Trade</a>
+  <a class="nav-link" href="#patience">Patience Tracker</a>
+  <a class="nav-link" href="#targets">Price Targets</a>
+  <a class="nav-link" href="#cycleanalysis">Cycle Analysis</a>
+  <div class="nav-section">Reference</div>
+  <a class="nav-link" href="#whennot">When NOT To Trade</a>
+  <a class="nav-link" href="#convergence">Using Data Together</a>
+  <a class="nav-link" href="#quickref">Quick Reference</a>
+  <a class="nav-link" href="#glossary">Glossary</a>
+  <a class="nav-link" href="#disclaimer">Disclaimers</a>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- COVER -->
+  <div class="cover">
+    <div class="cover-title">METALRADAR</div>
+    <div class="cover-sub">INTELLIGENCE SUITE</div>
+    <div class="cover-desc">User Guide &amp; Reference Manual</div>
+    <div class="cover-ver">Version 2.0 &nbsp;&mdash;&nbsp; May 2026</div>
+    <div class="cover-disclaimer">For informational purposes only. Not financial advice.<br>Past performance does not guarantee future results.</div>
+  </div>
+
+  <!-- PHILOSOPHY -->
+  <h1 id="philosophy">The MetalRadar Philosophy</h1>
+  <p class="intro">MetalRadar is not a prediction machine. It is a situational awareness tool built to help you think more clearly before you act.</p>
+  <p>Every feature is designed to slow you down, inform your decision, and remind you of your own plan &mdash; without telling you what to do. The app observes. You decide.</p>
+  <p>Three core principles behind every feature:</p>
+  <ul>
+    <li><strong>Observation over prediction</strong> &mdash; patterns are tendencies, not guarantees</li>
+    <li><strong>Discipline over impulse</strong> &mdash; your plan matters more than today&rsquo;s price</li>
+    <li><strong>Survivability over maximization</strong> &mdash; staying in the game is the edge</li>
+  </ul>
+  <div class="note">MetalRadar was built around a cash-only, no-leverage philosophy. Maximum direct loss is always limited to capital invested. No margin calls. No broker-forced liquidation. If you can&rsquo;t afford the trade, you don&rsquo;t make it.</div>
+  <blockquote>&ldquo;Compounding only works if you stay solvent and emotionally stable long enough to continue participating.&rdquo;</blockquote>
+
+  <hr class="section-break">
+
+  <!-- GETTING STARTED -->
+  <h1 id="start">Getting Started</h1>
+  <h2>Setup</h2>
+  <p>MetalRadar requires a free Finnhub API key for live price data. No other accounts are needed.</p>
+  <table class="ref-table">
+    <tr><th>Step</th><th>Action</th></tr>
+    <tr><td>1</td><td>Go to <strong>finnhub.io</strong> and create a free account</td></tr>
+    <tr><td>2</td><td>Copy your API key from the Finnhub dashboard</td></tr>
+    <tr><td>3</td><td>Open MetalRadar and enter your API key on the setup screen</td></tr>
+    <tr><td>4</td><td>Tap <strong>CONNECT</strong> &mdash; your key is stored locally on your device only, never sent to any other server</td></tr>
+  </table>
+  <div class="warning">Your API key is stored in your browser&rsquo;s local storage only. It is never sent to any server other than Finnhub directly. Do not share your API key with others.</div>
+
+  <h2>Navigation</h2>
+  <p>MetalRadar has three tabs at the top of the screen:</p>
+  <table class="ref-table">
+    <tr><th>Tab</th><th>Purpose</th></tr>
+    <tr><td>◈ Portfolio</td><td>Live prices, macro environment, and dividend rhythm tracker for your watchlist</td></tr>
+    <tr><td>⟳ Rhythm Scanner</td><td>Scan any ticker for wave patterns, entry/exit signals, and risk assessment</td></tr>
+    <tr><td>📓 Trade Journal</td><td>Log trades, track patience, set price targets, and review your behavior over time</td></tr>
+  </table>
+
+  <hr class="section-break">
+
+  <!-- PORTFOLIO TAB -->
+  <h1 id="watchlist">Tab 1: Portfolio</h1>
+  <p class="intro">The Portfolio tab is your primary dashboard. It loads automatically and refreshes whenever you tap REFRESH.</p>
+
+  <h2>My Watchlist</h2>
+  <p>The watchlist panel sits at the top of the Portfolio tab and controls which tickers appear as cards.</p>
+  <table class="ref-table">
+    <tr><th>Action</th><th>How</th></tr>
+    <tr><td>Add a ticker</td><td>Type any stock symbol and tap + ADD (or press Enter)</td></tr>
+    <tr><td>Remove a ticker</td><td>Tap the &times; on any ticker chip to remove it</td></tr>
+    <tr><td>Maximum</td><td>Up to 20 tickers can be tracked simultaneously</td></tr>
+    <tr><td>Saved automatically</td><td>Your watchlist persists between sessions on the same device and browser URL</td></tr>
+  </table>
+  <div class="tip">Add KSLV, KGLD, and MARA as your starting watchlist. You can add any other stocks, ETFs, or Bitcoin miners alongside them.</div>
+
+  <h2 id="macro">Macro Environment Panel</h2>
+  <p>Shows the current market environment across five key dimensions that affect your holdings.</p>
+  <table class="ref-table">
+    <tr><th>Signal</th><th>What It Measures</th></tr>
+    <tr><td>Geopolitical Pressure</td><td>Global tension level. Elevated pressure supports gold and silver as safe-haven assets</td></tr>
+    <tr><td>Treasury Yield Pressure</td><td>Rising yields create headwinds for precious metals since metals pay no interest income</td></tr>
+    <tr><td>USD Strength</td><td>A weakening dollar supports commodity prices. Gold and silver are priced globally in USD</td></tr>
+    <tr><td>Silver Volatility</td><td>Silver behaves as both a precious and industrial metal, making it more reactive than gold</td></tr>
+    <tr><td>BTC Sentiment</td><td>Driven by live BTC price change. RISK-ON means Bitcoin is up &mdash; bullish for MARA and miners</td></tr>
+  </table>
+  <div class="note">The macro panel provides context, not signals. Two indicators pointing the same direction strengthens the picture. Conflicting indicators suggest caution and deeper research.</div>
+
+  <h2 id="cards">Portfolio Cards</h2>
+  <h3>Price &amp; Change</h3>
+  <table class="ref-table">
+    <tr><th>Element</th><th>Meaning</th></tr>
+    <tr><td>Large price number</td><td>Current live price from Finnhub, updated on each refresh</td></tr>
+    <tr><td>+/- % and ($)</td><td>Percentage change and dollar change from previous close</td></tr>
+    <tr><td class="green">BULLISH badge</td><td>MA7 is above MA20 &mdash; short-term trend is upward</td></tr>
+    <tr><td class="red">BEARISH badge</td><td>MA7 is below MA20 &mdash; short-term trend is downward</td></tr>
+    <tr><td>Day High / Low / Prev Close</td><td>The intraday range and where price closed the previous session</td></tr>
+  </table>
+
+  <h3>Sparkline Chart</h3>
+  <p>The mini price chart shows the last 30 days of closing prices. Color tells the story at a glance:</p>
+  <ul>
+    <li><strong style="color:var(--green)">Green line</strong> &mdash; price is higher now than 30 days ago</li>
+    <li><strong style="color:var(--red)">Red line</strong> &mdash; price is lower now than 30 days ago</li>
+    <li><strong style="color:#6b8f3a">MA7 (yellow-green)</strong> &mdash; 7-day moving average. Fast-moving, sensitive to recent action</li>
+    <li><strong style="color:#1d5fa3">MA20 (blue)</strong> &mdash; 20-day moving average. Slower, reflects the broader trend</li>
+  </ul>
+  <div class="note">This is the only chart in MetalRadar by design. It gives directional context without encouraging over-analysis. Do your deeper charting on TradingView or your broker app.</div>
+
+  <h2 id="sr">Support &amp; Resistance Panel</h2>
+  <p>Calculated from 90 days of daily closing prices using price cluster analysis. Appears on every card after data loads.</p>
+  <table class="ref-table">
+    <tr><th>Element</th><th>Meaning</th></tr>
+    <tr><td class="green">Support (green)</td><td>The price level that has historically acted as a floor. More touches = stronger support</td></tr>
+    <tr><td class="red">Resistance (red)</td><td>The price level that has historically acted as a ceiling. More touches = stronger resistance</td></tr>
+    <tr><td>Current price</td><td>Shown in the center, positioned between support and resistance on the progress bar</td></tr>
+    <tr><td>Touches count</td><td>How many times that price level has been tested. Higher = more historically significant</td></tr>
+  </table>
+
+  <h3>Alert Messages</h3>
+  <table class="ref-table">
+    <tr><th>Alert</th><th>Meaning</th><th></th></tr>
+    <tr><td>At support</td><td>Price is within 2% of support level. Historically a bounce zone &mdash; do your own checks</td><td class="green">&#9650;</td></tr>
+    <tr><td>Near support</td><td>Price is within 5% of support. Approaching a potential floor zone</td><td class="green">&#9650;</td></tr>
+    <tr><td>Midrange</td><td>Price is between support and resistance with no strong proximity signal</td><td class="gray">&#8212;</td></tr>
+    <tr><td>Near resistance</td><td>Price is within 5% of resistance. Approaching a potential stall zone</td><td class="red">&#9660;</td></tr>
+    <tr><td>At resistance</td><td>Price is within 2% of resistance. Historically a ceiling &mdash; do your own checks</td><td class="red">&#9660;</td></tr>
+  </table>
+  <div class="warning">S&amp;R levels are observations from recent history only. A price breaking above resistance can be bullish. A price breaking below support may signal further weakness. Always verify with your own analysis.</div>
+
+  <h3>Metals ETF Panels (KSLV, KGLD)</h3>
+  <table class="ref-table">
+    <tr><th>Panel</th><th>What It Tells You</th></tr>
+    <tr><td>EX-DIV banner</td><td>Days until next ex-dividend date and estimated payout per share. Turns amber within 3 days of ex-date</td></tr>
+    <tr><td>ROC Warning</td><td>Return of Capital notice. Some of the dividend may be returning your own invested capital rather than generating new income. Always verify the distribution breakdown before making decisions based on yield</td></tr>
+  </table>
+
+  <h3>MARA / Crypto Miner Panel</h3>
+  <table class="ref-table">
+    <tr><th>Element</th><th>Meaning</th></tr>
+    <tr><td>BTC Price</td><td>Live Bitcoin price from Binance via Finnhub</td></tr>
+    <tr><td>24h Change</td><td>BTC&rsquo;s 24-hour change. MARA amplifies BTC moves in both directions</td></tr>
+  </table>
+
+  <h2 id="rhythm">Dividend Rhythm Tracker</h2>
+  <p>Located below the portfolio cards. Shows historical price behavior before and after each ex-dividend date over the last 12 months. Use KSLV and KGLD tabs to switch.</p>
+
+  <h3>Window Status</h3>
+  <table class="ref-table">
+    <tr><th>Status</th><th>Meaning</th></tr>
+    <tr><td class="red">POST-DIVIDEND WINDOW ACTIVE</td><td>Within 7 days after ex-date. Post-div selling historically occurs here. Watch for a price floor forming</td></tr>
+    <tr><td class="gold">PRE-DIVIDEND WINDOW ACTIVE</td><td>Within 7 days before ex-date. Some yield-chaser buying can push price upward</td></tr>
+    <tr><td class="gray">OUTSIDE ACTIVE WINDOW</td><td>Outside the dividend influence zone. Next ex-date shown with days remaining</td></tr>
+  </table>
+
+  <h3>Rhythm Statistics</h3>
+  <table class="ref-table">
+    <tr><th>Stat</th><th>What It Measures</th></tr>
+    <tr><td>Avg Pre-Div</td><td>Average price move in the 7 days before each ex-dividend date across all tracked cycles</td></tr>
+    <tr><td>Avg Ex-Drop</td><td>Average price move on the ex-dividend date itself. Often negative as the dividend is priced out</td></tr>
+    <tr><td>Avg Post-Div</td><td>Average price move in the 7 days after the ex-dividend date</td></tr>
+    <tr><td>Pre-Div Up %</td><td>Percentage of historical cycles where price rose in the 7 days before ex-date</td></tr>
+    <tr><td>Post-Div Down %</td><td>Percentage of historical cycles where price fell in the 7 days after ex-date</td></tr>
+  </table>
+  <div class="tip">The Pattern Intelligence summary at the bottom translates the numbers into plain language. Read it after reviewing the cycle table for full context.</div>
+
+  <hr class="section-break">
+
+  <!-- SCANNER TAB -->
+  <h1 id="profile">Tab 2: Rhythm Scanner</h1>
+  <p class="intro">Scan any ticker symbol for repeating price patterns, entry/exit signals, and detailed risk framing.</p>
+
+  <h2>Trading Profile Banner</h2>
+  <p>Shows your current trading profile. Tap <strong>Change</strong> to update. Affects how risk is framed across all scan results.</p>
+  <table class="ref-table">
+    <tr><th>Profile</th><th>What It Means</th></tr>
+    <tr><td class="green">Cash Only &mdash; No Leverage</td><td>Maximum direct loss limited to capital invested. No margin calls possible. Recommended default</td></tr>
+    <tr><td class="gold">Some Margin &mdash; Controlled</td><td>Limited margin use. Losses can exceed capital invested in leveraged positions</td></tr>
+    <tr><td class="red">Active Leverage / Options</td><td>Regular margin or options use. Full risk exposure including losses beyond capital</td></tr>
+  </table>
+
+  <h2>Saved Favorites</h2>
+  <p>After scanning any ticker, tap <strong>☆ Save Favorite</strong> to add it to your quick-access list. Tap any chip to instantly rescan. Tap &times; to remove. Favorites persist between sessions.</p>
+
+  <h2 id="wavescore">Wave Score</h2>
+  <p>A score from 0 to 99 measuring how consistent and repeatable the ticker&rsquo;s price cycle has been over the last year of data.</p>
+  <table class="ref-table">
+    <tr><th>Score Range</th><th>Interpretation</th></tr>
+    <tr><td class="green">80&ndash;99</td><td>Strong, consistent rhythm detected. Historical cycles have been repeatable and usable for timing awareness</td></tr>
+    <tr><td class="gold">60&ndash;79</td><td>Moderate rhythm. Some consistency but macro events have disrupted the pattern at times</td></tr>
+    <tr><td class="gold">40&ndash;59</td><td>Weak-to-moderate. Use with additional context and significant caution</td></tr>
+    <tr><td class="red">0&ndash;39</td><td>Weak or irregular. Price behavior driven more by external events than internal cycles. Difficult to time reliably</td></tr>
+  </table>
+  <div class="warning">A high Wave Score reflects historical pattern consistency only. It does not predict future behavior. Any external event &mdash; earnings, macro shock, Fed announcement &mdash; can break a rhythm instantly.</div>
+
+  <h2 id="signals">Entry / Exit Signals</h2>
+  <table class="ref-table">
+    <tr><th>Signal</th><th>Meaning</th></tr>
+    <tr><td class="green">⚡ NEAR CYCLE LOW</td><td>Price is in the early phase of a natural cycle. Historically followed by a gain toward the cycle peak. Observation only &mdash; not a buy signal</td></tr>
+    <tr><td class="red">⚠ APPROACHING CYCLE PEAK</td><td>Cycle suggests price may be near a peak zone. Consider reviewing your exit criteria</td></tr>
+    <tr><td class="red">◉ LATE CYCLE &mdash; CAUTION</td><td>Near the estimated top of the cycle. Risk/reward may be unfavorable for new entries</td></tr>
+    <tr><td class="green">⚡ ENTRY TARGET HIT</td><td>Live price has reached or dropped below your set entry target price</td></tr>
+    <tr><td class="gold">⚠ PRE-DIVIDEND WINDOW</td><td>Within 7 days of ex-date. Pre-div runup may be occurring</td></tr>
+    <tr><td class="gray">◉ NO CLEAR SIGNAL</td><td>Current cycle position does not produce a strong entry or exit observation</td></tr>
+  </table>
+
+  <h2 id="risk">Position Risk Assessment</h2>
+  <p>Appears on every scan result. Framed by your trading profile.</p>
+  <table class="ref-table">
+    <tr><th>Metric</th><th>Meaning</th></tr>
+    <tr><td class="green">Max Direct Loss</td><td>Cash-only: limited to capital invested. Margin: can exceed capital. Options/leverage: potentially unlimited</td></tr>
+    <tr><td class="green">Forced Liquidation</td><td>Cash-only: None possible. Margin: broker can force close if position moves against you</td></tr>
+    <tr><td class="green">Avg Wave Gain</td><td>Historical average price gain from detected cycle trough to next peak</td></tr>
+    <tr><td class="red">Avg Wave Drop</td><td>Historical average price decline from cycle peak to trough. Your risk exposure per cycle</td></tr>
+  </table>
+  <div class="note">Additional flags appear automatically: ROC warning for income ETFs, volatility warning if historical drawdown exceeds 8%, and the Sentinel principle: &ldquo;Compounding only works if you stay solvent and emotionally stable long enough to continue participating.&rdquo;</div>
+
+  <h2 id="cycle">Natural Price Cycle Section</h2>
+  <table class="ref-table">
+    <tr><th>Stat</th><th>Meaning</th></tr>
+    <tr><td>Avg Cycle</td><td>Average days from price peak to peak. KSLV example: 14 days</td></tr>
+    <tr><td>Consistency</td><td>Percentage of historical cycles that matched the average cycle length. KSLV example: 90%</td></tr>
+    <tr><td class="green">Avg Wave Gain</td><td>Average gain from cycle trough to next peak. Your potential upside if you enter near a low</td></tr>
+    <tr><td>Since Last Low</td><td>Days ago the last cycle trough occurred. Tells you where you are in the current cycle</td></tr>
+  </table>
+  <p>The cycle chart shows the full price history with <strong style="color:var(--red)">red circles</strong> at detected peaks and <strong style="color:var(--green)">green circles</strong> at detected troughs.</p>
+
+  <hr class="section-break">
+
+  <!-- JOURNAL TAB -->
+  <h1 id="logtrade">Tab 3: Trade Journal</h1>
+  <p class="intro">The Trade Journal turns your trading activity into a behavioral record you can learn from. Every entry becomes data for your next decision.</p>
+
+  <h2>Log a Trade</h2>
+  <table class="ref-table">
+    <tr><th>Field</th><th>What to Enter</th></tr>
+    <tr><td>Ticker</td><td>The stock symbol (e.g. KSLV, MARA)</td></tr>
+    <tr><td>Action</td><td><span class="badge badge-green">BUY IN</span> <span class="badge badge-red">SELL OUT</span> <span class="badge badge-gold">DIVIDEND</span></td></tr>
+    <tr><td>Price</td><td>Your actual execution price per share. For DIVIDEND: total dollar amount received</td></tr>
+    <tr><td>Shares</td><td>Shares bought or sold. For DIVIDEND: shares held at time of payment</td></tr>
+    <tr><td>Date</td><td>Trade date. Defaults to today</td></tr>
+    <tr><td>Notes</td><td>Your personal observation. This becomes your behavioral record over time</td></tr>
+  </table>
+  <div class="tip">Always add a note. &ldquo;Near cycle low, Wave Score 96&rdquo; or &ldquo;Gapped down at open, entered above the low&rdquo; &mdash; these notes become your most valuable data across multiple cycles.</div>
+
+  <h3>Logging a Dividend</h3>
+  <p>Select <span class="badge badge-gold">DIVIDEND</span> from the Action dropdown. The form adjusts automatically:</p>
+  <ul>
+    <li>Price field becomes <strong>Total Received ($)</strong> &mdash; enter the full dollar amount (e.g. $75.00)</li>
+    <li>Shares field becomes <strong>Shares Held</strong> &mdash; how many shares you held at payment</li>
+  </ul>
+  <p>Dividends appear in Trade History with a gold left border. When you complete a cycle (log a SELL OUT), dividends received during the hold period are automatically added to your total return calculation.</p>
+
+  <h2 id="patience">Trade Patience Tracker</h2>
+  <p>Automatically creates a tracking card for every open BUY IN position. This is the behavioral heart of MetalRadar.</p>
+
+  <h3>Building Your Trade Thesis</h3>
+  <p>When you log a BUY IN, complete the trade thesis form. Done once per trade.</p>
+  <table class="ref-table">
+    <tr><th>Field</th><th>What to Enter</th></tr>
+    <tr><td>Planned Hold (days)</td><td>How long you plan to hold. Base on cycle data from the scanner. KSLV example: 14 days</td></tr>
+    <tr><td>Exit Target ($)</td><td>Your planned sell price. Should match your price target in the Targets panel</td></tr>
+    <tr><td>Invalidation Point ($)</td><td>The price where your thesis breaks down. &ldquo;If it drops below $X, something changed and I reassess.&rdquo; Acts as a mental stop-loss</td></tr>
+    <tr><td>Why did you enter?</td><td>Your reasoning in plain language. Shown back to you every time you open the journal</td></tr>
+    <tr><td>Chart Snapshot</td><td>Optional. Upload a screenshot of the chart at entry. Stored locally as a visual memory anchor</td></tr>
+  </table>
+  <div class="note">Your chart snapshot is stored locally on your device only. It is compressed to reduce storage use. Screenshots from TradingView or your broker app work well.</div>
+
+  <h3>Reading the Patience Card</h3>
+  <table class="ref-table">
+    <tr><th>Element</th><th>Meaning</th></tr>
+    <tr><td class="gold">Day counter</td><td>How many days you have been in this trade compared to your planned hold period</td></tr>
+    <tr><td>Progress bar</td><td>Visual progress through your planned hold. Green = early, amber = midpoint, red = at or past planned exit</td></tr>
+    <tr><td>Entry / Current / Target</td><td>Your three key price points at a glance</td></tr>
+    <tr><td>% remaining to target</td><td>How far the current price still needs to move to reach your exit target</td></tr>
+    <tr><td class="gold">Discipline check</td><td>The most important line on the card. Read this when you feel the urge to exit early or panic</td></tr>
+    <tr><td>Your original thesis</td><td>Your own words shown back to you. &ldquo;Has the thesis changed, or am I just uncomfortable?&rdquo;</td></tr>
+    <tr><td>Entry chart snapshot</td><td>What the chart looked like when you decided to buy</td></tr>
+  </table>
+
+  <h3>Discipline Check Messages</h3>
+  <table class="ref-table">
+    <tr><th>Message</th><th>What It Means</th></tr>
+    <tr><td class="gold">Early in hold period</td><td>You are early in the planned hold. The cycle data suggested N days. Give it time before reconsidering</td></tr>
+    <tr><td class="green">On track</td><td>You are on track with your plan. Stay disciplined &mdash; do not let short-term noise override your thesis</td></tr>
+    <tr><td class="red">At or past planned exit</td><td>You have reached your planned hold period. Is your target reached? Has the thesis changed? Time to review</td></tr>
+  </table>
+
+  <h2 id="targets">Price Targets &amp; Alerts</h2>
+  <p>Set specific price levels the app monitors every time you open it or tap REFRESH.</p>
+  <table class="ref-table">
+    <tr><th>Target Type</th><th>Triggers When</th></tr>
+    <tr><td class="green">EXIT &mdash; Sell at</td><td>Price reaches or exceeds your target. Green alert banner fires</td></tr>
+    <tr><td class="blue">ENTRY &mdash; Buy at</td><td>Price reaches or drops below your target. Blue alert banner fires</td></tr>
+    <tr><td class="red">STOP &mdash; Warn at</td><td>Price drops to or below your stop level. Red alert banner fires</td></tr>
+  </table>
+  <p>Alert proximity levels:</p>
+  <ul>
+    <li>Within 3% of target &mdash; amber &ldquo;approaching&rdquo; banner</li>
+    <li>At or past target &mdash; full color alert with progress bar showing how far from entry to target</li>
+  </ul>
+  <div class="note">These are in-app alerts only. The app must be open to check prices. For real-time background alerts, use TradingView or your broker app alongside MetalRadar.</div>
+
+  <h2 id="cycleanalysis">Cycle Performance Analysis</h2>
+  <p>Automatically pairs BUY IN and SELL OUT trades for the same ticker to calculate completed cycle performance.</p>
+  <table class="ref-table">
+    <tr><th>Card Type</th><th>Shows</th></tr>
+    <tr><td>Open Position</td><td>Entry price, entry date, current price, and unrealized P&amp;L for any trade without a matching sell</td></tr>
+    <tr><td>Completed Cycle</td><td>Entry, exit, price P&amp;L, dividend income received during the hold, and total return combined</td></tr>
+    <tr><td>Timing Feedback</td><td>Compares your actual hold duration and gain to historical cycle averages from the scanner</td></tr>
+  </table>
+
+  <h3>Timing Feedback</h3>
+  <table class="ref-table">
+    <tr><th>Feedback</th><th>Meaning</th></tr>
+    <tr><td class="green">✓ Strong execution</td><td>You captured 75%+ of the historical avg wave gain. Timing tracked well</td></tr>
+    <tr><td class="blue">ℹ Solid execution</td><td>You captured 40&ndash;74% of the avg wave gain. Room to improve timing</td></tr>
+    <tr><td class="gold">⚠ Early exit</td><td>Less than 40% of avg wave gain captured. Consider waiting longer next cycle</td></tr>
+    <tr><td class="red">⚠ Loss cycle</td><td>The cycle resulted in a loss. Review entry timing and thesis validity</td></tr>
+  </table>
+
+  <hr class="section-break">
+
+
+  <h1 id="whennot">When NOT To Trade</h1>
+  <p class="intro">Knowing when to step back is as valuable as knowing when to enter. Restraint is intelligence.</p>
+  <p>MetalRadar includes a pre-trade checklist in the Trade Journal tab. Before logging any trade, run through the checklist. If flags appear, the system does not stop you &mdash; but it asks the question your emotions may be avoiding.</p>
+
+  <div class="warning">A high Wave Score and a favorable signal do not override poor personal conditions. The market will have another setup. A bad decision made in the wrong mental state is harder to recover from than a missed opportunity.</div>
+
+  <h2>The 10 Conditions</h2>
+  <table class="ref-table">
+    <tr><th>#</th><th>Condition</th><th>Why It Matters</th></tr>
+    <tr><td>1</td><td>Feeling emotional, anxious, or upset</td><td>Emotional states impair risk assessment and cause overreaction to normal price movement</td></tr>
+    <tr><td>2</td><td>Trying to recover a recent loss quickly</td><td>Revenge trading is one of the most common ways small losses become large ones. The market does not owe you a recovery</td></tr>
+    <tr><td>3</td><td>Entering because of FOMO</td><td>Fear of missing out is not a thesis. If you cannot articulate why the setup is valid beyond "it&rsquo;s going up," wait</td></tr>
+    <tr><td>4</td><td>Chasing a move that already happened</td><td>Entering after a large move has already occurred dramatically changes the risk/reward profile from what the scanner detected</td></tr>
+    <tr><td>5</td><td>Position would be too large relative to total capital</td><td>Oversizing a position makes it psychologically impossible to hold through normal volatility. You will exit at the worst time</td></tr>
+    <tr><td>6</td><td>Ignoring your own invalidation point</td><td>If you have already mentally moved your stop, you are not following your plan &mdash; you are rationalizing. Patience becomes denial</td></tr>
+    <tr><td>7</td><td>No clear entry, target, and invalidation planned</td><td>Entering without a plan is not trading. It is gambling with extra steps. Complete your thesis first</td></tr>
+    <tr><td>8</td><td>Sleep deprived or not thinking clearly</td><td>Cognitive impairment affects risk perception the same way alcohol does. If you are not sharp, your judgment is not reliable</td></tr>
+    <tr><td>9</td><td>Major macro news or Fed announcement expected today</td><td>Any rhythm pattern can be instantly overridden by a major macro event. High-impact news days have elevated volatility and unpredictable direction</td></tr>
+    <tr><td>10</td><td>Someone else is pressuring you to make this trade</td><td>Other people&rsquo;s conviction about your money is not a valid thesis. You are the one who will live with the outcome</td></tr>
+  </table>
+
+  <h2>How the Checklist Works in the App</h2>
+  <p>The checklist appears at the top of the Trade Journal tab, above the log form. Tap any condition that applies to you right now. The result updates automatically:</p>
+  <table class="ref-table">
+    <tr><th>Result</th><th>Meaning</th></tr>
+    <tr><td class="green">✓ CONDITIONS CLEAR</td><td>No flags raised. If your thesis is sound and your plan is ready, you may proceed with discipline</td></tr>
+    <tr><td class="gold">⚠ 1 FLAG &mdash; CAUTION</td><td>Acknowledge the condition consciously before proceeding. Consider whether it can be resolved first</td></tr>
+    <tr><td class="gold">⚠ MULTIPLE FLAGS &mdash; HIGH CAUTION</td><td>Odds of an emotional or impulsive decision are elevated. Strongly consider waiting</td></tr>
+    <tr><td class="red">⛔ MULTIPLE FLAGS &mdash; DO NOT TRADE NOW</td><td>Step away. Revisit your thesis when conditions clear and return with a plan, not an impulse</td></tr>
+  </table>
+  <div class="note">The checklist does not prevent you from making a trade. MetalRadar never tells you what to do. It asks the questions you might avoid asking yourself. The decision is always yours.</div>
+
+  <h2>Restraint as Strategy</h2>
+  <p>The traders who survive long enough to compound are rarely the ones who make the most trades. They are the ones who skip the bad ones.</p>
+  <p>Every time you run the checklist and it comes back clear, you have confirmed your discipline. Every time it raises a flag and you choose to wait, you have protected your capital from yourself &mdash; which is often the hardest thing to do in markets.</p>
+  <blockquote>&ldquo;The market will have another setup. A missed opportunity is recoverable. An impulsive loss may not be.&rdquo;</blockquote>
+
+  <hr class="section-break">
+  <!-- CONVERGENCE -->
+  <h1 id="convergence">Using the Data Together</h1>
+  <p class="intro">MetalRadar is most powerful when multiple signals align independently. This is called convergence.</p>
+
+  <h2>The Convergence Method</h2>
+  <p>Before entering a trade, check each layer. The more that agree, the stronger the setup:</p>
+  <table class="ref-table">
+    <tr><th>#</th><th>Layer</th><th>What to Look For</th></tr>
+    <tr><td>1</td><td>Macro Environment</td><td>Are conditions favorable? (Weakening dollar + geopolitical pressure = bullish for metals)</td></tr>
+    <tr><td>2</td><td>Rhythm Scanner</td><td>Wave Score above 70? Signal showing NEAR CYCLE LOW? Consistency above 70%?</td></tr>
+    <tr><td>3</td><td>Post-Dividend Window</td><td>For KSLV/KGLD: Are we in the post-div window with historically positive avg?</td></tr>
+    <tr><td>4</td><td>Support &amp; Resistance</td><td>Is price near support? Or breaking through resistance (bullish)?</td></tr>
+    <tr><td>5</td><td>Bollinger Bands (external)</td><td>On TradingView: Is price near the lower band? Is the SMA above or below current price?</td></tr>
+    <tr><td>6</td><td>Your Thesis</td><td>Does this setup match what you planned? Or are you chasing because of FOMO?</td></tr>
+  </table>
+  <div class="tip">Real example: KSLV Wave Score 96, Near Cycle Low signal, Post-Div window active with +6.58% historical avg, SR showing near support, lower Bollinger Band holding, and planned entry price reached. Five independent signals agreeing = high-context setup. This is how the app was designed to be used.</div>
+
+  <h2>What MetalRadar Does NOT Do</h2>
+  <ul>
+    <li>Does not predict future prices</li>
+    <li>Does not guarantee any trade outcome</li>
+    <li>Does not account for sudden macro events, earnings, or news shocks that can break any pattern</li>
+    <li>Does not replace your own research and judgment</li>
+    <li>Does not provide legal or financial advice</li>
+  </ul>
+
+  <hr class="section-break">
+
+  <!-- QUICK REFERENCE -->
+  <h1 id="quickref">Quick Reference</h1>
+
+  <h2>Color Guide</h2>
+  <table class="ref-table">
+    <tr><th>Color</th><th>Meaning</th></tr>
+    <tr><td class="green">Green</td><td>Positive, bullish, gaining, near support, on track, safe</td></tr>
+    <tr><td class="red">Red</td><td>Negative, bearish, declining, near resistance, at risk, warning</td></tr>
+    <tr><td class="gold">Gold / Amber</td><td>Caution, approaching, dividend-related, patience required</td></tr>
+    <tr><td class="blue">Blue</td><td>Informational, neutral, BTC-related, entry targets</td></tr>
+    <tr><td class="gray">Gray</td><td>No signal, midrange, neutral observation, inactive</td></tr>
+  </table>
+
+  <h2>Badge Reference</h2>
+  <table class="ref-table">
+    <tr><th>Badge</th><th>Where It Appears</th><th>Meaning</th></tr>
+    <tr><td><span class="badge badge-green">BULLISH</span></td><td>Portfolio cards</td><td>MA7 is above MA20 &mdash; short-term uptrend</td></tr>
+    <tr><td><span class="badge badge-red">BEARISH</span></td><td>Portfolio cards</td><td>MA7 is below MA20 &mdash; short-term downtrend</td></tr>
+    <tr><td><span class="badge badge-green">BUY IN</span></td><td>Trade journal</td><td>A position was opened</td></tr>
+    <tr><td><span class="badge badge-red">SELL OUT</span></td><td>Trade journal</td><td>A position was closed</td></tr>
+    <tr><td><span class="badge badge-gold">DIVIDEND</span></td><td>Trade journal</td><td>Dividend income received</td></tr>
+    <tr><td><span class="badge badge-green">EXIT</span></td><td>Price targets</td><td>Sell at this price target</td></tr>
+    <tr><td><span class="badge badge-blue">ENTRY</span></td><td>Price targets</td><td>Buy in at this price target</td></tr>
+    <tr><td><span class="badge badge-red">STOP</span></td><td>Price targets</td><td>Warn if price drops to this level</td></tr>
+  </table>
+
+  <hr class="section-break">
+
+  <!-- GLOSSARY -->
+  <h1 id="glossary">Glossary</h1>
+  <table class="ref-table">
+    <tr><th>Term</th><th>Definition</th></tr>
+    <tr><td>Ex-Dividend Date</td><td>The date you must own shares before in order to receive the dividend. Price typically adjusts downward by the dividend amount on this date</td></tr>
+    <tr><td>Return of Capital (ROC)</td><td>A portion of a dividend that is actually returning your own invested capital rather than generating new income. Reduces your cost basis over time</td></tr>
+    <tr><td>Covered-Call ETF</td><td>An ETF that sells call options on its holdings to generate income paid as a dividend. KSLV and KGLD are both covered-call ETFs. Distributions may include ROC</td></tr>
+    <tr><td>NAV Erosion</td><td>When the net asset value of an ETF declines over time. High yield can mask NAV erosion if the dividend exceeds actual income generated</td></tr>
+    <tr><td>Wave Score</td><td>MetalRadar&rsquo;s measure of historical cycle consistency. 0&ndash;99. Higher = more repeatable price rhythm</td></tr>
+    <tr><td>Support</td><td>A price level where buying has historically been strong enough to stop or reverse a decline. Multiple touches = stronger support</td></tr>
+    <tr><td>Resistance</td><td>A price level where selling has historically been strong enough to stop or reverse an advance. Multiple touches = stronger resistance</td></tr>
+    <tr><td>MA7 / MA20</td><td>7-day and 20-day simple moving averages. MA7 above MA20 = bullish short-term trend. MA7 below MA20 = bearish</td></tr>
+    <tr><td>Invalidation Point</td><td>The price at which your original trade thesis is no longer valid. Acts as a mental stop-loss and forces reassessment</td></tr>
+    <tr><td>Cash Only</td><td>Trading exclusively with settled cash you own. No borrowed money, no margin. Maximum loss always limited to capital invested</td></tr>
+    <tr><td>Post-Div Window</td><td>The 7-day period after an ex-dividend date. Historically characterized by selling as dividend-capture traders exit</td></tr>
+    <tr><td>Cycle Trough</td><td>The lowest price point in a repeating price cycle. Detected as a local minimum. Potential entry zone</td></tr>
+    <tr><td>Cycle Peak</td><td>The highest price point in a repeating price cycle. Detected as a local maximum. Potential exit zone</td></tr>
+    <tr><td>Convergence</td><td>When multiple independent signals from different parts of MetalRadar all point in the same direction. Strengthens the case for a trade</td></tr>
+    <tr><td>Dividend Capture</td><td>The strategy of buying a stock before its ex-dividend date to receive the dividend, then selling afterward. Risk: post-div price drop can exceed dividend received</td></tr>
+    <tr><td>BTC Miner</td><td>A company that generates revenue by mining Bitcoin. Examples: MARA, CLSK. Price correlates strongly with Bitcoin price, often with amplified moves in both directions</td></tr>
+  </table>
+
+  <hr class="section-break">
+
+  <!-- DISCLAIMER -->
+  <h1 id="disclaimer">Important Disclaimers</h1>
+  <div class="warning">MetalRadar is for informational and educational purposes only. Nothing in this application or this document constitutes financial advice, investment advice, trading advice, or any other sort of advice. You should not treat any information in MetalRadar as a recommendation to buy, sell, or hold any investment.</div>
+  <div class="warning">Past performance does not guarantee future results. Historical price patterns, cycle analysis, and rhythm data reflect what has happened in the past. Markets can and do behave differently in the future.</div>
+  <div class="warning">All investing involves risk of loss. Even with a cash-only, no-leverage approach, you can lose some or all of the capital you invest.</div>
+  <p>Always do your own research. Consult a licensed financial advisor before making investment decisions. Position sizing and risk management are entirely your own responsibility.</p>
+  <p>Data sources used by MetalRadar: Finnhub.io (live prices, news, splits), Yahoo Finance via CORS proxy (historical candles, dividends). MetalRadar is not affiliated with, endorsed by, or sponsored by Finnhub, Yahoo Finance, Robinhood, Coinbase, or any other financial platform mentioned in this document.</p>
+
+  <div class="doc-footer">
+    MetalRadar Intelligence Suite &mdash; User Guide v2.0 &nbsp;&bull;&nbsp; May 2026<br>
+    Built by Tommy &amp; Forge (Claude) &nbsp;&bull;&nbsp; For informational purposes only
+  </div>
+
+</div><!-- end main -->
+</body>
+</html>
