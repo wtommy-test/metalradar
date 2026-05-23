@@ -608,9 +608,15 @@ body::before {
     <div class="section-wrap">
 
       <!-- SEARCH -->
-      <div class="scanner-search-wrap">
-        <input class="scanner-input" type="text" id="scanner-input" placeholder="Enter any ticker — AAPL, MARA, JEPI…" maxlength="10" />
+      <div class="scanner-search-wrap" style="position:relative;flex-wrap:wrap">
+        <div style="position:relative;flex:1">
+          <input class="scanner-input" type="text" id="scanner-input" placeholder="Ticker or crypto (ETH, BTC, AAPL…)" maxlength="25" oninput="scannerCryptoSuggest(this.value)" autocomplete="off" autocorrect="off" autocapitalize="characters" />
+          <div class="crypto-suggest" id="scanner-crypto-suggest" style="display:none"></div>
+        </div>
         <button class="scan-btn" id="scan-btn" onclick="runScan()">SCAN</button>
+      </div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:10px;letter-spacing:0.05em">
+        For crypto use: <span style="color:var(--gold)">BINANCE:ETHUSDT</span> &nbsp;|&nbsp; <span style="color:var(--gold)">BINANCE:BTCUSDT</span> &nbsp;|&nbsp; or just type <span style="color:var(--gold)">ETH</span> and select from dropdown
       </div>
 
       <!-- FAVORITES -->
@@ -833,7 +839,17 @@ const RHYTHM_ETF_DIVS = {
 window.addEventListener('DOMContentLoaded', () => {
   if (API_KEY) showApp();
   document.getElementById('api-key-input').addEventListener('keydown', e => { if(e.key==='Enter') saveKey(); });
-  document.getElementById('scanner-input').addEventListener('keydown', e => { if(e.key==='Enter') runScan(); });
+  document.getElementById('scanner-input').addEventListener('keydown', function(e) {
+  var box = document.getElementById('scanner-crypto-suggest');
+  if (e.key === 'Enter') {
+    if (box && box.style.display !== 'none') {
+      var first = box.querySelector('.crypto-suggest-item');
+      if (first) { first.click(); return; }
+    }
+    runScan();
+  }
+  if (e.key === 'Escape' && box) box.style.display = 'none';
+});
   // handleWLKey is set via oninput/onkeydown on the element directly
 });
 
@@ -1176,8 +1192,15 @@ function saveFavorite(ticker) {
 }
 
 async function runScan() {
-  const raw = document.getElementById('scanner-input').value.trim().toUpperCase();
-  if (!raw) return;
+  var rawInput = document.getElementById('scanner-input').value.trim().toUpperCase();
+  if (!rawInput) return;
+  // Auto-expand short crypto symbols
+  var cryptoExpand = CRYPTO_MAP.find(function(c){ return c.short === rawInput; });
+  if (cryptoExpand) {
+    document.getElementById('scanner-input').value = cryptoExpand.symbol;
+    rawInput = cryptoExpand.symbol;
+  }
+  const raw = rawInput;
   const ticker = raw;
   const btn = document.getElementById('scan-btn');
   btn.disabled=true; btn.textContent='SCANNING…';
@@ -1773,8 +1796,15 @@ function saveFavorite(ticker) {
 }
 
 async function runScan() {
-  const raw = document.getElementById('scanner-input').value.trim().toUpperCase();
-  if (!raw) return;
+  var rawInput = document.getElementById('scanner-input').value.trim().toUpperCase();
+  if (!rawInput) return;
+  // Auto-expand short crypto symbols
+  var cryptoExpand = CRYPTO_MAP.find(function(c){ return c.short === rawInput; });
+  if (cryptoExpand) {
+    document.getElementById('scanner-input').value = cryptoExpand.symbol;
+    rawInput = cryptoExpand.symbol;
+  }
+  const raw = rawInput;
   const ticker = raw;
   const btn = document.getElementById('scan-btn');
   btn.disabled=true; btn.textContent='SCANNING…';
@@ -3290,6 +3320,44 @@ function addWatchlistTicker() {
   buildCards();
   refreshPortfolio();
 }
+
+
+function scannerCryptoSuggest(val) {
+  var box = document.getElementById('scanner-crypto-suggest');
+  if (!box) return;
+  var q = (val||'').trim().toUpperCase();
+  if (!q || q.length < 2) { box.style.display='none'; return; }
+  var matches = CRYPTO_MAP.filter(function(c) {
+    return c.short.startsWith(q) ||
+           c.name.toUpperCase().includes(q) ||
+           c.symbol.toUpperCase().includes(q);
+  }).slice(0, 6);
+  if (!matches.length) { box.style.display='none'; return; }
+  box.innerHTML = matches.map(function(c) {
+    return '<div class="crypto-suggest-item" onclick="selectScannerCrypto(\'' + c.symbol + '\')">'
+      + '<div class="crypto-suggest-ticker">' + c.icon + ' ' + c.short + ' &mdash; ' + c.name + '</div>'
+      + '<div class="crypto-suggest-format">Finnhub: ' + c.symbol + '</div>'
+      + '</div>';
+  }).join('');
+  box.style.display = 'block';
+}
+
+function selectScannerCrypto(symbol) {
+  var input = document.getElementById('scanner-input');
+  var box   = document.getElementById('scanner-crypto-suggest');
+  if (input) input.value = symbol;
+  if (box)   box.style.display = 'none';
+  runScan();
+}
+
+// Close scanner dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  var box   = document.getElementById('scanner-crypto-suggest');
+  var input = document.getElementById('scanner-input');
+  if (box && input && !input.contains(e.target) && !box.contains(e.target)) {
+    box.style.display = 'none';
+  }
+});
 
 </script>
 </body>
