@@ -616,7 +616,7 @@ body::before {
         <button class="scan-btn" id="scan-btn" onclick="runScan()">SCAN</button>
       </div>
       <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:10px;letter-spacing:0.05em">
-        For crypto use: <span style="color:var(--gold)">BINANCE:ETHUSDT</span> &nbsp;|&nbsp; <span style="color:var(--gold)">BINANCE:BTCUSDT</span> &nbsp;|&nbsp; or just type <span style="color:var(--gold)">ETH</span> and select from dropdown
+        Crypto via Binance only (free API): type <span style="color:var(--gold)">ETH</span>, <span style="color:var(--gold)">BTC</span>, <span style="color:var(--gold)">SOL</span> etc. and select from dropdown &mdash; or enter <span style="color:var(--gold)">BINANCE:ETHUSDT</span> directly
       </div>
 
       <!-- FAVORITES -->
@@ -3230,9 +3230,7 @@ const CRYPTO_MAP = [
   { symbol:'BINANCE:LTCUSDT',  short:'LTC',  name:'Litecoin',         icon:'Ł' },
   { symbol:'BINANCE:ATOMUSDT', short:'ATOM', name:'Cosmos',           icon:'⚛' },
   { symbol:'BINANCE:NEARUSDT', short:'NEAR', name:'NEAR Protocol',    icon:'◑' },
-  { symbol:'COINBASE:ETHUSD',  short:'ETH-USD', name:'ETH (Coinbase)','icon':'Ξ' },
-  { symbol:'COINBASE:BTCUSD',  short:'BTC-USD', name:'BTC (Coinbase)','icon':'₿' },
-  { symbol:'COINBASE:SOLUSD',  short:'SOL-USD', name:'SOL (Coinbase)','icon':'◎' },
+
 ];
 
 function cryptoSuggest(val) {
