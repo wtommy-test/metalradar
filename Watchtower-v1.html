@@ -1335,7 +1335,7 @@ function entryExitSignal(cycles, naturalCycles, hasDivs, divDates) {
       if (cycleProgress >= 0.85) return { type:'watch', icon:'◉', label:'LATE CYCLE — REVIEW CONDITIONS', desc:`Near the top of the estimated cycle. Risk/reward may be unfavorable for new entries here.` };
     }
   }
-  return { type:'neutral', icon:'◉', label:'NO STRONG CONTEXTUAL ALIGNMENT', desc:'No strong entry or exit signal detected in the current position within this ticker\'s rhythm. Continue monitoring.' };
+  return { type:'neutral', icon:'◉', label:'NO STRONG CONTEXTUAL ALIGNMENT', desc:'No strong contextual alignment detected at this time. Historical conditions do not show a clearly defined observation zone. Continue monitoring.' };
 }
 
 function renderScanResult(ticker, { quote, candles, divs, cycles, naturalCycles, name }) {
@@ -1932,7 +1932,7 @@ function entryExitSignal(cycles, naturalCycles, hasDivs, divDates) {
       if (cycleProgress >= 0.85) return { type:'watch', icon:'◉', label:'LATE CYCLE — REVIEW CONDITIONS', desc:`Near the top of the estimated cycle. Risk/reward may be unfavorable for new entries here.` };
     }
   }
-  return { type:'neutral', icon:'◉', label:'NO STRONG CONTEXTUAL ALIGNMENT', desc:'No strong entry or exit signal detected in the current position within this ticker\'s rhythm. Continue monitoring.' };
+  return { type:'neutral', icon:'◉', label:'NO STRONG CONTEXTUAL ALIGNMENT', desc:'No strong contextual alignment detected at this time. Historical conditions do not show a clearly defined observation zone. Continue monitoring.' };
 }
 
 function renderScanResult(ticker, { quote, candles, divs, cycles, naturalCycles, name }) {
