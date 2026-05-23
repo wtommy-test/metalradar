@@ -467,6 +467,17 @@ body::before {
   .wnt-reset:hover { border-color:var(--border2); color:var(--text2); }
   @media(max-width:480px){ .wnt-grid{ grid-template-columns:1fr; } }
 
+
+  /* ── CRYPTO SYMBOL HELPER ── */
+  .crypto-suggest { position:absolute; left:0; right:0; background:var(--surface); border:1px solid var(--gold); border-radius:0 0 4px 4px; z-index:50; max-height:200px; overflow-y:auto; }
+  .crypto-suggest-item { padding:8px 12px; cursor:pointer; border-bottom:1px solid var(--border); transition:background 0.15s; }
+  .crypto-suggest-item:last-child { border-bottom:none; }
+  .crypto-suggest-item:hover { background:rgba(212,175,55,0.08); }
+  .crypto-suggest-ticker { font-family:var(--mono); font-size:11px; font-weight:700; color:var(--gold); }
+  .crypto-suggest-name { font-size:10px; color:var(--text3); margin-top:1px; font-style:italic; }
+  .crypto-suggest-format { font-family:var(--mono); font-size:9px; color:var(--text3); margin-top:1px; }
+  .wl-input-wrap { position:relative; flex:1; }
+
 </style>
 </head>
 <body>
@@ -547,7 +558,10 @@ body::before {
   <div class="watchlist-manager">
     <div class="wl-title">My Watchlist &mdash; <span id="wl-count">0/20</span></div>
     <div class="wl-add-row">
-      <input class="wl-input" type="text" id="wl-input" placeholder="Add any ticker&hellip;" maxlength="10" />
+      <div class="wl-input-wrap">
+      <input class="wl-input" type="text" id="wl-input" placeholder="Add any ticker or crypto (e.g. ETH, BTC)&hellip;" maxlength="20" oninput="cryptoSuggest(this.value)" onkeydown="handleWLKey(event)" autocomplete="off" autocorrect="off" autocapitalize="characters" />
+      <div class="crypto-suggest" id="crypto-suggest" style="display:none"></div>
+    </div>
       <button class="wl-add-btn" onclick="addWatchlistTicker()">+ ADD</button>
     </div>
     <div class="wl-chips" id="wl-chips"></div>
@@ -820,7 +834,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (API_KEY) showApp();
   document.getElementById('api-key-input').addEventListener('keydown', e => { if(e.key==='Enter') saveKey(); });
   document.getElementById('scanner-input').addEventListener('keydown', e => { if(e.key==='Enter') runScan(); });
-  var _wli=document.getElementById("wl-input");if(_wli)_wli.addEventListener("keydown",function(e){if(e.key==="Enter")addWatchlistTicker();});
+  // handleWLKey is set via oninput/onkeydown on the element directly
 });
 
 function saveKey() {
@@ -3164,6 +3178,117 @@ function updateWNTResult() {
     msgEl.style.color = 'var(--red)';
     msgEl.textContent = 'Significant conditions are present. This is not the right moment. Step away, revisit your thesis when conditions clear, and return with a plan \u2014 not an impulse.';
   }
+}
+
+
+// ════════════════════════════════════════════════════════
+// CRYPTO SYMBOL HELPER
+// ════════════════════════════════════════════════════════
+const CRYPTO_MAP = [
+  { symbol:'BINANCE:BTCUSDT',  short:'BTC',  name:'Bitcoin',          icon:'₿' },
+  { symbol:'BINANCE:ETHUSDT',  short:'ETH',  name:'Ethereum',         icon:'Ξ' },
+  { symbol:'BINANCE:SOLUSDT',  short:'SOL',  name:'Solana',           icon:'◎' },
+  { symbol:'BINANCE:BNBUSDT',  short:'BNB',  name:'BNB',              icon:'◈' },
+  { symbol:'BINANCE:XRPUSDT',  short:'XRP',  name:'Ripple',           icon:'✕' },
+  { symbol:'BINANCE:ADAUSDT',  short:'ADA',  name:'Cardano',          icon:'₳' },
+  { symbol:'BINANCE:DOGEUSDT', short:'DOGE', name:'Dogecoin',         icon:'Ð' },
+  { symbol:'BINANCE:AVAXUSDT', short:'AVAX', name:'Avalanche',        icon:'▲' },
+  { symbol:'BINANCE:DOTUSDT',  short:'DOT',  name:'Polkadot',         icon:'◉' },
+  { symbol:'BINANCE:MATICUSDT',short:'MATIC',name:'Polygon',          icon:'◇' },
+  { symbol:'BINANCE:LINKUSDT', short:'LINK', name:'Chainlink',        icon:'⬡' },
+  { symbol:'BINANCE:UNIUSDT',  short:'UNI',  name:'Uniswap',          icon:'◈' },
+  { symbol:'BINANCE:LTCUSDT',  short:'LTC',  name:'Litecoin',         icon:'Ł' },
+  { symbol:'BINANCE:ATOMUSDT', short:'ATOM', name:'Cosmos',           icon:'⚛' },
+  { symbol:'BINANCE:NEARUSDT', short:'NEAR', name:'NEAR Protocol',    icon:'◑' },
+  { symbol:'COINBASE:ETHUSD',  short:'ETH-USD', name:'ETH (Coinbase)','icon':'Ξ' },
+  { symbol:'COINBASE:BTCUSD',  short:'BTC-USD', name:'BTC (Coinbase)','icon':'₿' },
+  { symbol:'COINBASE:SOLUSD',  short:'SOL-USD', name:'SOL (Coinbase)','icon':'◎' },
+];
+
+function cryptoSuggest(val) {
+  var box = document.getElementById('crypto-suggest');
+  if (!box) return;
+  var q = (val||'').trim().toUpperCase();
+  if (!q || q.length < 2) { box.style.display='none'; return; }
+
+  // Match against short symbols and names
+  var matches = CRYPTO_MAP.filter(function(c) {
+    return c.short.startsWith(q) ||
+           c.name.toUpperCase().includes(q) ||
+           c.symbol.toUpperCase().includes(q);
+  }).slice(0, 6);
+
+  if (!matches.length) { box.style.display='none'; return; }
+
+  box.innerHTML = matches.map(function(c) {
+    return '<div class="crypto-suggest-item" onclick="selectCrypto(\'' + c.symbol + '\')">'
+      + '<div class="crypto-suggest-ticker">' + c.icon + ' ' + c.short + ' &mdash; ' + c.name + '</div>'
+      + '<div class="crypto-suggest-format">Finnhub: ' + c.symbol + '</div>'
+      + '</div>';
+  }).join('');
+  box.style.display = 'block';
+}
+
+function selectCrypto(symbol) {
+  var input = document.getElementById('wl-input');
+  var box   = document.getElementById('crypto-suggest');
+  if (input) input.value = symbol;
+  if (box)   box.style.display = 'none';
+  // Auto-add immediately
+  addWatchlistTicker();
+}
+
+function handleWLKey(e) {
+  var box = document.getElementById('crypto-suggest');
+  if (e.key === 'Enter') {
+    if (box && box.style.display !== 'none') {
+      // If suggestions showing, pick first one
+      var first = box.querySelector('.crypto-suggest-item');
+      if (first) { first.click(); return; }
+    }
+    addWatchlistTicker();
+  }
+  if (e.key === 'Escape' && box) {
+    box.style.display = 'none';
+  }
+}
+
+// Close suggestions when clicking outside
+document.addEventListener('click', function(e) {
+  var box   = document.getElementById('crypto-suggest');
+  var input = document.getElementById('wl-input');
+  if (box && input && !input.contains(e.target) && !box.contains(e.target)) {
+    box.style.display = 'none';
+  }
+});
+
+// Also update addWatchlistTicker to handle full Finnhub crypto symbols
+var _origAddWatchlistTicker = addWatchlistTicker;
+function addWatchlistTicker() {
+  var input = document.getElementById('wl-input');
+  if (!input) return;
+  var raw = (input.value||'').trim().toUpperCase();
+
+  // Check if it's a short crypto symbol and auto-expand
+  var cryptoMatch = CRYPTO_MAP.find(function(c) {
+    return c.short === raw;
+  });
+  if (cryptoMatch) {
+    input.value = cryptoMatch.symbol;
+  }
+
+  // Now call original logic
+  var ticker = (input.value||'').trim().toUpperCase().replace(/[^A-Z0-9:\.]/g,'');
+  if (!ticker || watchlist.includes(ticker)) { input.value=''; return; }
+  if (watchlist.length >= 20) { alert('Max 20 tickers.'); return; }
+  watchlist.push(ticker);
+  localStorage.setItem('mr_watchlist', JSON.stringify(watchlist));
+  input.value='';
+  var box = document.getElementById('crypto-suggest');
+  if (box) box.style.display = 'none';
+  renderWatchlistChips();
+  buildCards();
+  refreshPortfolio();
 }
 
 </script>
