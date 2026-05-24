@@ -386,6 +386,37 @@ body::before {
   .sr-alert.at-resistance { color:var(--red); background:rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.35); font-weight:600; }
 
 
+  /* ── WAVE SCORE CONFIDENCE ── */
+  .wave-score-confidence { font-family:var(--mono); font-size:9px; color:var(--text3); letter-spacing:0.06em; margin-top:4px; line-height:1.4; }
+  .wave-score-caution { font-family:var(--mono); font-size:9px; color:var(--amber); margin-top:3px; letter-spacing:0.04em; }
+
+  /* ── POST-EX-DIV DAY COUNTER ── */
+  .exdiv-counter { display:flex; align-items:center; gap:8px; background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:7px 10px; margin-bottom:8px; }
+  .exdiv-counter.post-div { border-color:rgba(251,191,36,0.4); background:rgba(251,191,36,0.04); }
+  .exdiv-counter.pre-div { border-color:rgba(74,222,128,0.3); background:rgba(74,222,128,0.03); }
+  .exdiv-counter.peak-window { border-color:rgba(96,165,250,0.4); background:rgba(96,165,250,0.05); }
+  .exdiv-day-num { font-family:var(--mono); font-size:22px; font-weight:700; line-height:1; min-width:32px; text-align:center; }
+  .exdiv-day-detail { flex:1; }
+  .exdiv-day-label { font-family:var(--mono); font-size:9px; letter-spacing:0.12em; text-transform:uppercase; margin-bottom:2px; }
+  .exdiv-day-desc { font-size:11px; color:var(--text3); font-style:italic; line-height:1.4; }
+
+  /* ── SILVER SPOT PANEL ── */
+  .silver-spot-panel { display:flex; align-items:center; gap:10px; background:var(--bg); border:1px solid rgba(192,192,192,0.2); border-radius:4px; padding:7px 10px; margin-bottom:8px; }
+  .silver-spot-icon { font-size:16px; opacity:0.7; }
+  .silver-spot-detail { flex:1; }
+  .silver-spot-label { font-family:var(--mono); font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:2px; }
+  .silver-spot-price { font-family:var(--mono); font-size:14px; font-weight:700; color:var(--silver); }
+  .silver-spot-change { font-family:var(--mono); font-size:11px; font-weight:700; }
+  .silver-spot-note { font-size:10px; color:var(--text3); font-style:italic; }
+
+  /* ── INVALIDATION ALERT ── */
+  .invalidation-alert { border-radius:4px; padding:8px 12px; margin-bottom:8px; border:1px solid; }
+  .invalidation-alert.safe { border-color:var(--border); background:var(--bg); }
+  .invalidation-alert.warning { border-color:rgba(251,191,36,0.5); background:rgba(251,191,36,0.06); }
+  .invalidation-alert.danger { border-color:rgba(248,113,113,0.5); background:rgba(248,113,113,0.07); }
+  .invalidation-alert-label { font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:3px; }
+  .invalidation-alert-body { font-size:11px; line-height:1.5; font-style:italic; }
+
   .dividend-row{border:1px solid var(--border);border-radius:5px;padding:12px 14px;margin-bottom:8px;border-left:3px solid var(--gold)}
   .badge-dividend{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 8px;border-radius:3px;letter-spacing:.1em;background:rgba(212,175,55,0.12);color:var(--gold);border:1px solid rgba(212,175,55,0.3)}
 
@@ -810,6 +841,144 @@ let favorites = JSON.parse(localStorage.getItem('mr_favorites') || '[]');
 
 const WINDOW_DAYS = 7;
 
+// ════════════════════════════════════════════════════════
+// POST-EX-DIV DAY COUNTER (Priority 3)
+// ════════════════════════════════════════════════════════
+function getPostExDivStatus(exDivDateStr) {
+  if (!exDivDateStr) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const exDate = new Date(exDivDateStr); exDate.setHours(0,0,0,0);
+  const diffDays = Math.round((today - exDate) / 86400000);
+
+  if (diffDays < 0) {
+    return {
+      type: 'pre-div',
+      days: Math.abs(diffDays),
+      label: `${Math.abs(diffDays)}d to Ex-Div`,
+      desc: `Ex-dividend in ${Math.abs(diffDays)} day${Math.abs(diffDays)!==1?'s':''}. Pre-div window — price may drift upward into the date.`,
+      color: 'var(--green)',
+      cssClass: 'pre-div'
+    };
+  }
+  if (diffDays === 0) {
+    return {
+      type: 'ex-day',
+      days: 0,
+      label: 'EX-DIV TODAY',
+      desc: 'Today is the ex-dividend date. NAV adjustment typically hits at open. Expect price weakness.',
+      color: 'var(--red)',
+      cssClass: 'post-div'
+    };
+  }
+  // Post-div — determine which phase
+  let phase = '', phaseColor = 'var(--text2)', cssClass = 'post-div';
+  if (diffDays <= 5) {
+    phase = 'Stabilization phase — price still settling post-ex-div drop.';
+    phaseColor = 'var(--red)';
+  } else if (diffDays <= 7) {
+    phase = 'Recovery watch — historically price begins attempting a floor here.';
+    phaseColor = 'var(--amber)';
+  } else if (diffDays <= 14) {
+    phase = 'Momentum window — historically the strongest recovery phase for dividend-cycle ETFs.';
+    phaseColor = 'var(--blue)';
+    cssClass = 'peak-window';
+  } else {
+    phase = 'Late cycle — beyond the typical 14-day momentum window. Review exit criteria.';
+    phaseColor = 'var(--text3)';
+  }
+
+  return {
+    type: 'post-div',
+    days: diffDays,
+    label: `Day ${diffDays} Post Ex-Div`,
+    desc: phase,
+    color: phaseColor,
+    cssClass
+  };
+}
+
+function renderExDivCounter(ticker, exDivDateStr, containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const status = getPostExDivStatus(exDivDateStr);
+  if (!status) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <div class="exdiv-counter ${status.cssClass}">
+      <div class="exdiv-day-num" style="color:${status.color}">${status.type==='pre-div'?'-'+status.days:status.type==='ex-day'?'0':'+'+status.days}</div>
+      <div class="exdiv-day-detail">
+        <div class="exdiv-day-label" style="color:${status.color}">${status.label}</div>
+        <div class="exdiv-day-desc">${status.desc}</div>
+      </div>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+// SILVER SPOT PRICE (Priority 4)
+// ════════════════════════════════════════════════════════
+let silverSpotData = null;
+
+async function fetchSilverSpot() {
+  // SLV tracks silver spot closely — use as proxy via Yahoo Finance
+  try {
+    const to = Math.floor(Date.now()/1000);
+    const from = to - 2*86400;
+    const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/SLV?interval=1d&period1=${from}&period2=${to}`;
+    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`;
+    const r = await fetch(proxyUrl);
+    const d = await r.json();
+    const result = d?.chart?.result?.[0];
+    if (!result) return null;
+    const closes = result.indicators?.quote?.[0]?.close?.filter(c=>c!==null);
+    if (!closes || closes.length < 2) return null;
+    const price = closes[closes.length-1];
+    const prev  = closes[closes.length-2];
+    const change = price - prev;
+    const changePct = ((price-prev)/prev)*100;
+    return { price, change, changePct, source:'SLV' };
+  } catch(e) {
+    // Fallback: try Finnhub quote for SLV
+    try {
+      const r2 = await fetch(`https://finnhub.io/api/v1/quote?symbol=SLV&token=${API_KEY}`);
+      const d2 = await r2.json();
+      if (d2.c && d2.c > 0) return { price:d2.c, change:d2.d, changePct:d2.dp, source:'SLV' };
+    } catch {}
+    return null;
+  }
+}
+
+function renderSilverSpotPanel(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  if (!silverSpotData) {
+    el.innerHTML = `<div class="silver-spot-panel"><div class="silver-spot-icon">⬡</div><div class="silver-spot-detail"><div class="silver-spot-label">Silver Proxy (SLV)</div><div class="silver-spot-price" style="color:var(--text3)">Loading…</div></div></div>`;
+    return;
+  }
+  const { price, changePct, source } = silverSpotData;
+  const upDown = changePct >= 0 ? 'up' : 'down';
+  const changeColor = changePct >= 0 ? 'var(--green)' : 'var(--red)';
+  const arrow = changePct >= 0 ? '▲' : '▼';
+  // Contextual note based on direction
+  let note = '';
+  if (changePct <= -2) note = 'Silver falling — headwind for KSLV cycle recovery.';
+  else if (changePct <= -0.5) note = 'Silver soft — watch for cycle pressure.';
+  else if (changePct >= 2) note = 'Silver rising — tailwind for KSLV thesis.';
+  else if (changePct >= 0.5) note = 'Silver steady/up — cycle conditions neutral to favorable.';
+  else note = 'Silver flat — macro not adding pressure either way.';
+
+  el.innerHTML = `
+    <div class="silver-spot-panel">
+      <div class="silver-spot-icon">⬡</div>
+      <div class="silver-spot-detail">
+        <div class="silver-spot-label">Silver Proxy (${source}) — macro confirmation</div>
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <div class="silver-spot-price">${fmtUSD(price)}</div>
+          <div class="silver-spot-change ${upDown}" style="color:${changeColor}">${arrow} ${Math.abs(changePct).toFixed(2)}%</div>
+        </div>
+        <div class="silver-spot-note">${note}</div>
+      </div>
+    </div>`;
+}
+
 const PORTFOLIO_ASSETS = [
   { ticker:'KSLV', name:'KraneShares Silver', type:'metals-etf', platforms:['Robinhood','Coinbase'], color:'#C0C0C0', exDiv:'2026-05-20', payDate:'2026-05-21', estDividend:0.75, icon:'⬡',
     notes:[{hl:'#fbbf24',label:'Dividend Capture Risk',text:'Share price typically drops ~dividend amount after ex-date. Volatile markets can move far more than the payout.'},{hl:'#fb923c',label:'ROC Warning',text:'Distributions may return your own capital — not pure income. Verify before sizing.'},{hl:'#60a5fa',label:'Silver Nature',text:'Dual precious/industrial metal. Reacts to geopolitical safe-haven demand AND manufacturing/tech sentiment.'}]},
@@ -1014,6 +1183,11 @@ async function refreshPortfolio() {
   document.getElementById('last-update').textContent = 'Updated '+new Date().toLocaleTimeString();
   btn.disabled=false; btn.innerHTML='⟳ REFRESH';
   checkTargetsOnRefresh();
+  // Priority 4 — Fetch silver spot in background after portfolio loads
+  fetchSilverSpot().then(function(spot) {
+    silverSpotData = spot;
+    renderSilverSpotPanel('silver-spot-KSLV');
+  });
   // Fetch 90-day candles for SR on all watchlist tickers
   setTimeout(function() {
     watchlist.forEach(function(ticker) {
@@ -1112,6 +1286,16 @@ function updateCard(asset) {
     if(btcPriceEl) btcPriceEl.textContent=fmtUSD(btcQuote.price);
     if(btcChangeEl){ btcChangeEl.textContent=fmtPct(btcQuote.changePct); btcChangeEl.style.color=btcQuote.changePct>=0?'var(--green)':'var(--red)'; }
   }
+  // Priority 3 — Post-Ex-Div Day Counter
+  if (asset.exDiv) {
+    renderExDivCounter(asset.ticker, asset.exDiv, 'exdiv-counter-' + asset.ticker);
+  }
+  // Priority 4 — Silver Spot on KSLV card
+  if (asset.ticker === 'KSLV') {
+    renderSilverSpotPanel('silver-spot-' + asset.ticker);
+  }
+  // Priority 2 — Invalidation live alert
+  if (q) renderInvalidationAlert(asset.ticker, q.price);
 }
 
 function toggleNotes(ticker) {
@@ -1382,7 +1566,8 @@ function renderScanResult(ticker, { quote, candles, divs, cycles, naturalCycles,
       <div>
         <div class="wave-score-label">Wave Score</div>
         <div class="wave-score-num" style="color:${scoreColor}">${score}</div>
-      </div>
+        <div class="wave-score-confidence">${cycles.length>=1?`Based on ${cycles.length} div cycle${cycles.length!==1?'s':''}`+(naturalCycles?` + ${naturalCycles.peaks.length} price peak${naturalCycles.peaks.length!==1?'s':''}`:''):naturalCycles?`Based on ${naturalCycles.peaks.length} price peak${naturalCycles.peaks.length!==1?'s':''} — no div history`:'Insufficient data'}</div>
+        ${cycles.length>0&&cycles.length<4?'<div class="wave-score-caution">⚠ Low sample — interpret carefully</div>':''}</div>
       <div class="wave-bar-wrap">
         <div class="wave-score-label">Rhythm Strength</div>
         <div class="wave-score-desc">${score>=70?'Consistent historical rhythm observed':score>=40?'Moderate historical pattern — use with additional context':'Irregular historical pattern — limited contextual basis'}</div>
@@ -1984,7 +2169,8 @@ function renderScanResult(ticker, { quote, candles, divs, cycles, naturalCycles,
       <div>
         <div class="wave-score-label">Wave Score</div>
         <div class="wave-score-num" style="color:${scoreColor}">${score}</div>
-      </div>
+        <div class="wave-score-confidence">${cycles.length>=1?`Based on ${cycles.length} div cycle${cycles.length!==1?'s':''}`+(naturalCycles?` + ${naturalCycles.peaks.length} price peak${naturalCycles.peaks.length!==1?'s':''}`:''):naturalCycles?`Based on ${naturalCycles.peaks.length} price peak${naturalCycles.peaks.length!==1?'s':''} — no div history`:'Insufficient data'}</div>
+        ${cycles.length>0&&cycles.length<4?'<div class="wave-score-caution">⚠ Low sample — interpret carefully</div>':''}</div>
       <div class="wave-bar-wrap">
         <div class="wave-score-label">Rhythm Strength</div>
         <div class="wave-score-desc">${score>=70?'Consistent historical rhythm observed':score>=40?'Moderate historical pattern — use with additional context':'Irregular historical pattern — limited contextual basis'}</div>
@@ -2696,6 +2882,10 @@ function buildKnownCardHTML(a){
   var extra="";
   if(a.type==="metals-etf"){extra+=buildDivBanner(a);}
   if(a.type==="metals-etf"){extra+='<div class="roc-note"><span style="color:var(--orange)">◆</span><span>Distribution may include <span style="color:var(--orange)">Return of Capital (ROC)</span> — verify before sizing.</span></div>';}
+  // Priority 3 — Post-Ex-Div Day Counter placeholder (for all dividend ETFs)
+  if(a.exDiv){extra+='<div id="exdiv-counter-'+a.ticker+'"></div>';}
+  // Priority 4 — Silver Spot placeholder (KSLV only)
+  if(a.ticker==='KSLV'){extra+='<div id="silver-spot-KSLV"><div class="silver-spot-panel"><div class="silver-spot-icon">⬡</div><div class="silver-spot-detail"><div class="silver-spot-label">Silver Proxy (SLV) — macro confirmation</div><div class="silver-spot-price" style="color:var(--text3)">Loading…</div></div></div></div>';}
   if(a.type==="crypto-miner"){extra+='<div class="mara-panel"><div class="mara-panel-label">BTC Correlation</div><div class="mara-btc-row"><div><div class="mara-btc-sublabel">BTC Price</div><div class="mara-btc-val" id="btc-price">—</div></div><div><div class="mara-btc-sublabel">24h Change</div><div id="btc-change" style="font-family:var(--mono);font-size:13px;font-weight:700">—</div></div><div class="mara-btc-note">MARA tracks BTC sentiment.</div></div></div>';}
   var notesBtn=["<button class=\"expand-btn\" onclick=\"toggleNotes('",a.ticker,"')\">▼ Strategy Notes</button>",
     "<div class=\"strategy-notes\" id=\"notes-",a.ticker,"\">",
@@ -2904,6 +3094,42 @@ function updateJournalForm() {
 
 
 // ════════════════════════════════════════════════════════
+// PRIORITY 2 — INVALIDATION LIVE ALERT
+// ════════════════════════════════════════════════════════
+function renderInvalidationAlert(ticker, currentPrice) {
+  // Find all open positions for this ticker with a saved thesis
+  var keys = Object.keys(thesisData).filter(function(k) { return k.startsWith(ticker + '_'); });
+  keys.forEach(function(key) {
+    var thesis = thesisData[key];
+    var invalidation = parseFloat(thesis.invalidation);
+    if (!invalidation || !currentPrice) return;
+    var el = document.getElementById('invalidation-alert-' + key);
+    if (!el) return;
+
+    var pctAway = ((currentPrice - invalidation) / invalidation) * 100;
+    var alertClass, label, body;
+
+    if (currentPrice <= invalidation) {
+      alertClass = 'danger';
+      label = '⛔ INVALIDATION LEVEL BREACHED';
+      body = 'Current price ' + fmtUSD(currentPrice) + ' has breached your invalidation point of ' + fmtUSD(invalidation) + '. Your original thesis condition has been broken — review whether your reason for holding still stands.';
+    } else if (pctAway <= 3) {
+      alertClass = 'warning';
+      label = '⚠ APPROACHING INVALIDATION POINT';
+      body = 'Current price ' + fmtUSD(currentPrice) + ' is within ' + fmt(pctAway) + '% of your invalidation level (' + fmtUSD(invalidation) + '). Prepare your decision before price reaches that level.';
+    } else {
+      alertClass = 'safe';
+      label = 'Invalidation: ' + fmtUSD(invalidation);
+      body = fmt(pctAway) + '% above your invalidation point. Thesis intact.';
+    }
+
+    el.className = 'invalidation-alert ' + alertClass;
+    el.innerHTML = '<div class="invalidation-alert-label" style="color:' + (alertClass==='danger'?'var(--red)':alertClass==='warning'?'var(--amber)':'var(--text3)') + '">' + label + '</div>'
+      + '<div class="invalidation-alert-body" style="color:' + (alertClass==='danger'?'var(--red)':alertClass==='warning'?'var(--amber)':'var(--text3)') + '">' + body + '</div>';
+  });
+}
+
+// ════════════════════════════════════════════════════════
 // TRADE PATIENCE TRACKER
 // ════════════════════════════════════════════════════════
 var thesisData = JSON.parse(localStorage.getItem('mr_thesis') || '{}');
@@ -3015,6 +3241,9 @@ function renderPatienceTracker() {
         // To target
         + (pctToTarget!==null ? '<div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:10px;text-align:center">' + (pctToTarget>0?'&#9650; '+fmt(pctToTarget)+'% remaining to target':'&#9646; Target reached or exceeded') + '</div>' : '')
 
+        // Priority 2 — Invalidation live alert (rendered dynamically by renderInvalidationAlert)
+        + (thesis.invalidation ? '<div class="invalidation-alert safe" id="invalidation-alert-' + key + '"><div class="invalidation-alert-label" style="color:var(--text3)">Invalidation: ' + fmtUSD(parseFloat(thesis.invalidation)) + '</div><div class="invalidation-alert-body" style="color:var(--text3)">Loading…</div></div>' : '')
+
         // Discipline check
         + '<div class="patience-discipline ' + discClass + '">'
         + '<div class="patience-discipline-q" style="color:' + (discClass==='on-track'?'var(--green)':discClass==='early'?'var(--amber)':'var(--red)') + '">' + discQ + '</div>'
@@ -3037,6 +3266,13 @@ function renderPatienceTracker() {
 
   formsEl.innerHTML = formsHTML;
   cardsEl.innerHTML = cardsHTML || '<div style="font-size:12px;color:var(--text3);font-style:italic">No open positions found. Log a BUY IN trade to start tracking.</div>';
+  // Priority 2 — Fire invalidation alerts after cards render
+  setTimeout(function() {
+    Object.keys(openPositions).forEach(function(ticker) {
+      var price = quoteData[ticker] && quoteData[ticker].price;
+      if (price) renderInvalidationAlert(ticker, price);
+    });
+  }, 100);
 }
 
 function saveThesisForm(key) {
