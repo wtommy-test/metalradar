@@ -3294,8 +3294,8 @@ function renderPatienceTracker() {
         discA = 'You are on track with your plan. Day ' + daysSince + ' of ' + plannedDays + '. Stay disciplined — do not let short-term price noise override your original thesis.';
       }
 
-      // Build thesis form if not filled
-      if (!thesis.why) {
+      // Build thesis form if not filled OR if user clicked Edit
+      if (!thesis.why || thesis._editing) {
         formsHTML += '<div class="thesis-form" id="thesis-form-' + key + '">'
           + '<div class="thesis-form-title">' + ticker + ' — Build Your Trade Thesis</div>'
           + '<div class="thesis-row">'
@@ -3385,6 +3385,8 @@ function saveThesisForm(key) {
   var target = document.getElementById('th-target-' + key);
   var invalid = document.getElementById('th-invalid-' + key);
   var why = document.getElementById('th-why-' + key);
+  // Clear _editing flag before saving so the form collapses back to display mode
+  if (thesisData[key]) delete thesisData[key]._editing;
   saveThesis(key, {
     holdDays: hold ? hold.value : '14',
     target: target ? target.value : '',
@@ -3396,21 +3398,16 @@ function saveThesisForm(key) {
 }
 
 function editThesis(key) {
-  // Clear the why to show the form again
   var thesis = thesisData[key] || {};
   thesis._editing = true;
   thesisData[key] = thesis;
-  // Re-render with form visible
-  var formsEl = document.getElementById('patience-thesis-forms');
-  if (formsEl) {
-    // Temporarily delete why to show form
-    var savedWhy = thesis.why;
-    thesis.why = '';
-    localStorage.setItem('mr_thesis', JSON.stringify(thesisData));
-    renderPatienceTracker();
-    // Restore
-    thesis.why = savedWhy;
-  }
+  // Do NOT save _editing to localStorage — it's a transient UI flag only
+  renderPatienceTracker();
+  // Scroll the form into view
+  setTimeout(function() {
+    var formEl = document.getElementById('thesis-form-' + key);
+    if (formEl) formEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 80);
 }
 
 function handleSnapshot(key) {
