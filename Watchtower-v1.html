@@ -850,51 +850,54 @@ function getPostExDivStatus(exDivDateStr) {
   const exDate = new Date(exDivDateStr); exDate.setHours(0,0,0,0);
   const diffDays = Math.round((today - exDate) / 86400000);
 
+  // Pre-div: counting down to an upcoming ex-div date
   if (diffDays < 0) {
-    return {
-      type: 'pre-div',
-      days: Math.abs(diffDays),
-      label: `${Math.abs(diffDays)}d to Ex-Div`,
-      desc: `Ex-dividend in ${Math.abs(diffDays)} day${Math.abs(diffDays)!==1?'s':''}. Pre-div window — price may drift upward into the date.`,
-      color: 'var(--green)',
-      cssClass: 'pre-div'
-    };
+    const daysAway = Math.abs(diffDays);
+    let urgencyColor, cssClass = 'pre-div', desc;
+    if (daysAway <= 3) {
+      urgencyColor = 'var(--amber)';
+      desc = daysAway + ' day' + (daysAway!==1?'s':'') + ' to ex-dividend — pre-div runup window may be active. Plan your exit or hold decision now.';
+    } else if (daysAway <= 7) {
+      urgencyColor = 'var(--green)';
+      desc = daysAway + ' days to next ex-dividend. Pre-div drift window approaching — watch for upward price pressure.';
+    } else {
+      urgencyColor = 'var(--text3)';
+      desc = daysAway + ' days until next ex-dividend (' + exDivDateStr + '). Outside active rhythm window — mid-cycle hold.';
+    }
+    return { type:'pre-div', days:daysAway, label:daysAway+'d to Next Ex-Div', desc:desc, color:urgencyColor, cssClass:cssClass };
   }
+
+  // Ex-div day itself
   if (diffDays === 0) {
-    return {
-      type: 'ex-day',
-      days: 0,
-      label: 'EX-DIV TODAY',
-      desc: 'Today is the ex-dividend date. NAV adjustment typically hits at open. Expect price weakness.',
-      color: 'var(--red)',
-      cssClass: 'post-div'
-    };
+    return { type:'ex-day', days:0, label:'EX-DIV TODAY',
+      desc:'Today is the ex-dividend date. NAV adjustment typically hits at open — expect price weakness.',
+      color:'var(--red)', cssClass:'post-div' };
   }
-  // Post-div — determine which phase
-  let phase = '', phaseColor = 'var(--text2)', cssClass = 'post-div';
-  if (diffDays <= 5) {
-    phase = 'Stabilization phase — price still settling post-ex-div drop.';
+
+  // Post-div — determine which phase of the recovery cycle
+  let phase, phaseColor, cssClass = 'post-div';
+  if (diffDays <= 3) {
+    phase = 'Days 1–3: Flush zone — dividend sellers still exiting. Floor not yet confirmed.';
     phaseColor = 'var(--red)';
+  } else if (diffDays <= 5) {
+    phase = 'Days 4–5: Stabilization phase — post-div selling pressure typically easing.';
+    phaseColor = 'var(--orange)';
   } else if (diffDays <= 7) {
-    phase = 'Recovery watch — historically price begins attempting a floor here.';
+    phase = 'Days 6–7: Recovery watch — historically price begins attempting a base here.';
     phaseColor = 'var(--amber)';
   } else if (diffDays <= 14) {
-    phase = 'Momentum window — historically the strongest recovery phase for dividend-cycle ETFs.';
+    phase = 'Days 8–14: Momentum window — historically the strongest recovery phase. Watch for follow-through.';
     phaseColor = 'var(--blue)';
     cssClass = 'peak-window';
+  } else if (diffDays <= 21) {
+    phase = 'Days 15–21: Late cycle — beyond the typical momentum window. Review your exit criteria.';
+    phaseColor = 'var(--text3)';
   } else {
-    phase = 'Late cycle — beyond the typical 14-day momentum window. Review exit criteria.';
+    phase = 'Day ' + diffDays + ': Deep mid-cycle. Next ex-div approaching — begin watching for pre-div drift.';
     phaseColor = 'var(--text3)';
   }
 
-  return {
-    type: 'post-div',
-    days: diffDays,
-    label: `Day ${diffDays} Post Ex-Div`,
-    desc: phase,
-    color: phaseColor,
-    cssClass
-  };
+  return { type:'post-div', days:diffDays, label:'Day ' + diffDays + ' Post Ex-Div', desc:phase, color:phaseColor, cssClass:cssClass };
 }
 
 function renderExDivCounter(ticker, exDivDateStr, containerId) {
@@ -917,40 +920,75 @@ function renderExDivCounter(ticker, exDivDateStr, containerId) {
 // ════════════════════════════════════════════════════════
 let silverSpotData = null;
 
+// Fetch with timeout helper — rejects after ms milliseconds
+function fetchWithTimeout(url, ms) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(timer));
+}
+
+// Try fetching a Yahoo Finance URL through a list of CORS proxies in order
+async function fetchYahooViaCorsProxy(yahooUrl, timeoutMs) {
+  const CORS_PROXIES = [
+    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    url => `https://corsproxy.org/?${encodeURIComponent(url)}`,
+  ];
+  for (const makeProxy of CORS_PROXIES) {
+    try {
+      const r = await fetchWithTimeout(makeProxy(yahooUrl), timeoutMs);
+      if (!r.ok) continue;
+      const d = await r.json();
+      const result = d?.chart?.result?.[0];
+      if (result) return result;
+    } catch(e) {
+      // Timed out or network error — try next proxy
+      console.log('CORS proxy failed, trying next:', e.message);
+    }
+  }
+  return null;
+}
+
 async function fetchSilverSpot() {
   // SLV tracks silver spot closely — use as proxy via Yahoo Finance
   try {
     const to = Math.floor(Date.now()/1000);
     const from = to - 2*86400;
     const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/SLV?interval=1d&period1=${from}&period2=${to}`;
-    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`;
-    const r = await fetch(proxyUrl);
-    const d = await r.json();
-    const result = d?.chart?.result?.[0];
-    if (!result) return null;
-    const closes = result.indicators?.quote?.[0]?.close?.filter(c=>c!==null);
-    if (!closes || closes.length < 2) return null;
-    const price = closes[closes.length-1];
-    const prev  = closes[closes.length-2];
-    const change = price - prev;
-    const changePct = ((price-prev)/prev)*100;
-    return { price, change, changePct, source:'SLV' };
+    const result = await fetchYahooViaCorsProxy(yahooUrl, 7000);
+    if (result) {
+      const closes = result.indicators?.quote?.[0]?.close?.filter(c=>c!==null);
+      if (closes && closes.length >= 2) {
+        const price = closes[closes.length-1];
+        const prev  = closes[closes.length-2];
+        const change = price - prev;
+        const changePct = ((price-prev)/prev)*100;
+        return { price, change, changePct, source:'SLV' };
+      }
+    }
   } catch(e) {
-    // Fallback: try Finnhub quote for SLV
-    try {
-      const r2 = await fetch(`https://finnhub.io/api/v1/quote?symbol=SLV&token=${API_KEY}`);
-      const d2 = await r2.json();
-      if (d2.c && d2.c > 0) return { price:d2.c, change:d2.d, changePct:d2.dp, source:'SLV' };
-    } catch {}
-    return null;
+    console.log('fetchSilverSpot Yahoo path failed:', e.message);
   }
+  // Final fallback: Finnhub live quote for SLV (no CORS proxy needed)
+  try {
+    const r2 = await fetchWithTimeout(`https://finnhub.io/api/v1/quote?symbol=SLV&token=${API_KEY}`, 6000);
+    const d2 = await r2.json();
+    if (d2.c && d2.c > 0) return { price:d2.c, change:d2.d, changePct:d2.dp, source:'SLV' };
+  } catch(e) {
+    console.log('fetchSilverSpot Finnhub fallback failed:', e.message);
+  }
+  return null;
 }
 
-function renderSilverSpotPanel(containerId) {
+function renderSilverSpotPanel(containerId, loadError) {
   const el = document.getElementById(containerId);
   if (!el) return;
   if (!silverSpotData) {
-    el.innerHTML = `<div class="silver-spot-panel"><div class="silver-spot-icon">⬡</div><div class="silver-spot-detail"><div class="silver-spot-label">Silver Proxy (SLV)</div><div class="silver-spot-price" style="color:var(--text3)">Loading…</div></div></div>`;
+    const msg = loadError
+      ? 'Unavailable — proxy timeout. Check corsproxy.io status or refresh.'
+      : 'Loading…';
+    const msgColor = loadError ? 'var(--amber)' : 'var(--text3)';
+    el.innerHTML = `<div class="silver-spot-panel"><div class="silver-spot-icon">⬡</div><div class="silver-spot-detail"><div class="silver-spot-label">Silver Proxy (SLV)</div><div class="silver-spot-price" style="color:${msgColor}">${msg}</div></div></div>`;
     return;
   }
   const { price, changePct, source } = silverSpotData;
@@ -980,7 +1018,7 @@ function renderSilverSpotPanel(containerId) {
 }
 
 const PORTFOLIO_ASSETS = [
-  { ticker:'KSLV', name:'KraneShares Silver', type:'metals-etf', platforms:['Robinhood','Coinbase'], color:'#C0C0C0', exDiv:'2026-05-20', payDate:'2026-05-21', estDividend:0.75, icon:'⬡',
+  { ticker:'KSLV', name:'KraneShares Silver', type:'metals-etf', platforms:['Robinhood','Coinbase'], color:'#C0C0C0', lastExDiv:'2026-05-20', lastPayDate:'2026-05-21', exDiv:'2026-06-17', payDate:'2026-06-18', estDividend:0.75, icon:'⬡',
     notes:[{hl:'#fbbf24',label:'Dividend Capture Risk',text:'Share price typically drops ~dividend amount after ex-date. Volatile markets can move far more than the payout.'},{hl:'#fb923c',label:'ROC Warning',text:'Distributions may return your own capital — not pure income. Verify before sizing.'},{hl:'#60a5fa',label:'Silver Nature',text:'Dual precious/industrial metal. Reacts to geopolitical safe-haven demand AND manufacturing/tech sentiment.'}]},
   { ticker:'KGLD', name:'KraneShares Gold', type:'metals-etf', platforms:['Robinhood','Coinbase'], color:'#D4AF37', exDiv:null, payDate:null, estDividend:null, icon:'◈',
     notes:[{hl:'#D4AF37',label:'Gold ETF',text:'Pure safe-haven play. Sensitive to Treasury yield direction and USD strength. Weaker dollar is a tailwind.'},{hl:'#fb923c',label:'ROC Warning',text:'Same covered-call structure as KSLV — verify distribution composition.'},{hl:'#60a5fa',label:'Key Watch',text:'Monitor 10-year Treasury yield. Rising yields create headwinds for gold even during geopolitical uncertainty.'}]},
@@ -997,7 +1035,7 @@ const MACRO_SIGNALS = [
 ];
 
 const RHYTHM_ETF_DIVS = {
-  KSLV: ['2026-05-20','2026-04-22','2026-03-20','2026-02-20','2026-01-22','2025-12-20','2025-11-20','2025-10-22'],
+  KSLV: ['2026-06-17','2026-05-20','2026-04-22','2026-03-20','2026-02-20','2026-01-22','2025-12-20','2025-11-20','2025-10-22'],
   KGLD: ['2026-04-22','2026-03-20','2026-02-20','2026-01-22','2025-12-20','2025-11-20','2025-10-22'],
 };
 
@@ -1061,13 +1099,9 @@ async function finnhubCandles(symbol, days=365) {
   const to = Math.floor(Date.now()/1000);
   const from = to - days*86400;
   const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&period1=${from}&period2=${to}&range=1y`;
-  const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`;
   try {
-    const r = await fetch(proxyUrl);
-    if (!r.ok) throw new Error('proxy failed');
-    const d = await r.json();
-    const result = d?.chart?.result?.[0];
-    if (!result || !result.timestamp?.length) return null;
+    const result = await fetchYahooViaCorsProxy(yahooUrl, 8000);
+    if (!result || !result.timestamp?.length) throw new Error('no result from any proxy');
     const closes = result.indicators?.quote?.[0]?.close;
     const timestamps = result.timestamp;
     if (!closes || !timestamps || closes.length < 10) return null;
@@ -1106,10 +1140,8 @@ async function finnhubDividends(symbol) {
     const toTs = Math.floor(Date.now()/1000);
     const fromTs = toTs - 730*86400;
     const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&period1=${fromTs}&period2=${toTs}&events=div`;
-    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`;
-    const r = await fetch(proxyUrl);
-    const d = await r.json();
-    const events = d?.chart?.result?.[0]?.events?.dividends;
+    const divResult = await fetchYahooViaCorsProxy(yahooUrl, 8000);
+    const events = divResult?.events?.dividends;
     if (events && Object.keys(events).length > 0) {
       const dates = Object.values(events)
         .map(e => new Date(e.date*1000).toISOString().slice(0,10))
@@ -1186,7 +1218,7 @@ async function refreshPortfolio() {
   // Priority 4 — Fetch silver spot in background after portfolio loads
   fetchSilverSpot().then(function(spot) {
     silverSpotData = spot;
-    renderSilverSpotPanel('silver-spot-KSLV');
+    renderSilverSpotPanel('silver-spot-KSLV', spot === null);
   });
   // Fetch 90-day candles for SR on all watchlist tickers
   setTimeout(function() {
@@ -1202,12 +1234,9 @@ async function fetchSRCandles(ticker) {
     var to = Math.floor(Date.now()/1000);
     var from = to - 90*86400;
     var yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1d&period1=' + from + '&period2=' + to;
-    var proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(yahooUrl);
-    var r = await fetch(proxyUrl);
-    var d = await r.json();
-    var result = d && d.chart && d.chart.result && d.chart.result[0];
-    if (!result) return;
-    var closes = result.indicators && result.indicators.quote && result.indicators.quote[0] && result.indicators.quote[0].close;
+    var srResult = await fetchYahooViaCorsProxy(yahooUrl, 8000);
+    if (!srResult) return;
+    var closes = srResult.indicators && srResult.indicators.quote && srResult.indicators.quote[0] && srResult.indicators.quote[0].close;
     if (!closes || closes.length < 20) return;
     var validCloses = closes.filter(function(c) { return c !== null && c !== undefined && !isNaN(c); });
     if (validCloses.length < 20) return;
@@ -1241,11 +1270,56 @@ function updateMacroBTC() {
 
 function buildDivBanner(a) {
   if (!a.exDiv) return '';
-  const days = daysUntil(a.exDiv);
-  const urgent = days!==null && days<=3;
-  return `<div class="div-banner ${urgent?'urgent':''}">
-    <span style="color:${urgent?'var(--amber)':'var(--text3)'}">${urgent?`⚠ EX-DIV IN ${days} DAY${days!==1?'S':''}`:`Ex-Div: ${a.exDiv}`}</span>
+  // Parse dates as local noon to avoid UTC-offset off-by-one boundary bugs
+  function parseDateLocal(str) {
+    if (!str) return null;
+    var p = str.split('-');
+    if (p.length !== 3) return null;
+    var d = new Date(+p[0], +p[1]-1, +p[2], 12, 0, 0, 0);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const today = new Date(); today.setHours(12,0,0,0);
+  const nextExDate = parseDateLocal(a.exDiv);
+  if (!nextExDate) return '';
+  const daysToNext = Math.round((nextExDate - today) / 86400000);
+
+  // State 1: Post-div hold — last ex-div passed, next cycle counting down
+  const lastEx = parseDateLocal(a.lastExDiv);
+  if (lastEx && lastEx < today) {
+    const daysSinceLast = Math.round((today - lastEx) / 86400000);
+    if (daysSinceLast > 0 && daysToNext > 3) {
+      // We are in the post-div recovery window — show both last captured + next coming
+      return `<div class="div-banner" style="border-color:rgba(74,222,128,0.3);background:rgba(74,222,128,0.04)">
+        <span style="color:var(--green)">✓ DIV CAPTURED</span>
+        ${a.estDividend?`<span style="color:var(--green)">~$${a.estDividend.toFixed(2)}/share</span>`:''}
+        <span style="color:var(--text3)">paid ${a.lastPayDate||a.lastExDiv}</span>
+        <span style="color:var(--text3);margin-left:4px">· Next ex-div: ${a.exDiv} (${daysToNext}d)</span>
+      </div>`;
+    }
+  }
+
+  // State 2: Urgent — 3 days or fewer to next ex-div
+  if (daysToNext <= 3 && daysToNext >= 0) {
+    return `<div class="div-banner urgent">
+      <span style="color:var(--amber)">⚠ EX-DIV IN ${daysToNext} DAY${daysToNext!==1?'S':''}</span>
+      ${a.estDividend?`<span style="color:var(--green)">~$${a.estDividend.toFixed(2)}/share</span>`:''}
+      ${a.payDate?`<span style="color:var(--text3)">Pay: ${a.payDate}</span>`:''}
+    </div>`;
+  }
+
+  // State 3: Today IS ex-div day
+  if (daysToNext === 0) {
+    return `<div class="div-banner urgent">
+      <span style="color:var(--red)">⚠ EX-DIVIDEND TODAY</span>
+      <span style="color:var(--text3)">NAV adjustment at open. Price drop expected.</span>
+    </div>`;
+  }
+
+  // State 4: Normal upcoming countdown
+  return `<div class="div-banner">
+    <span style="color:var(--text3)">Next Ex-Div: ${a.exDiv}</span>
     ${a.estDividend?`<span style="color:var(--green)">~$${a.estDividend.toFixed(2)}/share</span>`:''}
+    <span style="color:var(--text3)">${daysToNext}d away</span>
     ${a.payDate?`<span style="color:var(--text3)">Pay: ${a.payDate}</span>`:''}
   </div>`;
 }
@@ -1287,12 +1361,43 @@ function updateCard(asset) {
     if(btcChangeEl){ btcChangeEl.textContent=fmtPct(btcQuote.changePct); btcChangeEl.style.color=btcQuote.changePct>=0?'var(--green)':'var(--red)'; }
   }
   // Priority 3 — Post-Ex-Div Day Counter
-  if (asset.exDiv) {
-    renderExDivCounter(asset.ticker, asset.exDiv, 'exdiv-counter-' + asset.ticker);
-  }
+  // Anchor the counter to the most recent *past* ex-div date (lastExDiv).
+  // Only fall back to the upcoming exDiv (pre-div countdown) when lastExDiv is
+  // absent OR is genuinely more than 30 days in the past.
+  (function() {
+    var todayMs = new Date(); todayMs.setHours(12,0,0,0); // noon local — avoids UTC-offset off-by-one
+    function parseDateLocal(str) {
+      // Parse YYYY-MM-DD as local noon to avoid timezone boundary issues
+      if (!str) return null;
+      var parts = str.split('-');
+      if (parts.length !== 3) return null;
+      var d = new Date(+parts[0], +parts[1]-1, +parts[2], 12, 0, 0, 0);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    var lastExDivD = parseDateLocal(asset.lastExDiv);
+    var nextExDivD = parseDateLocal(asset.exDiv);
+    // Determine which date to use
+    var counterDate = null;
+    if (lastExDivD && lastExDivD <= todayMs) {
+      // lastExDiv is a real past date — use it for post-div phase display
+      var daysSinceLast = Math.round((todayMs - lastExDivD) / 86400000);
+      if (daysSinceLast <= 30) {
+        counterDate = asset.lastExDiv; // still in active cycle window
+      } else if (nextExDivD && nextExDivD > todayMs) {
+        counterDate = asset.exDiv; // past 30d — switch to upcoming pre-div countdown
+      } else {
+        counterDate = asset.lastExDiv; // no upcoming date known — show deep mid-cycle
+      }
+    } else if (nextExDivD && nextExDivD > todayMs) {
+      counterDate = asset.exDiv; // no valid lastExDiv — show pre-div countdown
+    }
+    if (counterDate) {
+      renderExDivCounter(asset.ticker, counterDate, 'exdiv-counter-' + asset.ticker);
+    }
+  })();
   // Priority 4 — Silver Spot on KSLV card
   if (asset.ticker === 'KSLV') {
-    renderSilverSpotPanel('silver-spot-' + asset.ticker);
+    renderSilverSpotPanel('silver-spot-' + asset.ticker, silverSpotData === null);
   }
   // Priority 2 — Invalidation live alert
   if (q) renderInvalidationAlert(asset.ticker, q.price);
