@@ -154,6 +154,46 @@ body::before {
 .fav-chip-text { font-family:var(--mono); font-size:11px; color:var(--text2); letter-spacing:0.08em; }
 .fav-chip-remove { font-size:13px; color:var(--text3); line-height:1; transition:color 0.2s; }
 .fav-chip-remove:hover { color:var(--red); }
+
+/* ── RHYTHM OBSERVATION MODE ── */
+.scanner-mode-tabs { display:flex; gap:0; margin-bottom:18px; border:1px solid var(--border2); border-radius:5px; overflow:hidden; }
+.scanner-mode-btn { flex:1; font-family:var(--mono); font-size:9px; letter-spacing:0.14em; text-transform:uppercase; padding:9px 8px; background:transparent; border:none; color:var(--text3); cursor:pointer; transition:all 0.2s; }
+.scanner-mode-btn.active { background:var(--surface2); color:var(--gold); }
+.scanner-mode-btn:not(.active):hover { color:var(--text2); }
+.ro-wrap { margin-top:4px; }
+.ro-ticker-row { display:flex; align-items:center; gap:6px; margin-bottom:8px; }
+.ro-ticker-input { flex:1; background:var(--bg); border:1px solid var(--border2); color:var(--text); font-family:var(--mono); font-size:12px; padding:8px 10px; border-radius:4px; outline:none; text-transform:uppercase; letter-spacing:0.1em; }
+.ro-ticker-input:focus { border-color:var(--gold); }
+.ro-add-btn { background:var(--surface2); border:1px solid var(--border2); color:var(--text2); font-family:var(--mono); font-size:10px; letter-spacing:0.1em; padding:8px 12px; border-radius:4px; cursor:pointer; white-space:nowrap; transition:all 0.2s; }
+.ro-add-btn:hover { border-color:var(--gold); color:var(--gold); }
+.ro-list { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; min-height:28px; }
+.ro-chip { display:flex; align-items:center; gap:5px; background:var(--surface2); border:1px solid var(--border2); border-radius:20px; padding:4px 10px 4px 12px; }
+.ro-chip-text { font-family:var(--mono); font-size:11px; color:var(--text2); letter-spacing:0.08em; }
+.ro-chip-remove { font-size:13px; color:var(--text3); cursor:pointer; line-height:1; transition:color 0.2s; }
+.ro-chip-remove:hover { color:var(--red); }
+.ro-run-btn { width:100%; background:transparent; border:1px solid var(--gold); color:var(--gold); font-family:var(--mono); font-size:10px; letter-spacing:0.18em; padding:11px; border-radius:5px; cursor:pointer; transition:all 0.2s; margin-bottom:18px; }
+.ro-run-btn:hover:not(:disabled) { background:rgba(212,175,55,0.08); }
+.ro-run-btn:disabled { opacity:0.35; cursor:not-allowed; }
+.ro-progress { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spacing:0.08em; text-align:center; padding:16px; }
+.ro-group-label { font-family:var(--mono); font-size:9px; letter-spacing:0.18em; text-transform:uppercase; color:var(--text3); padding:6px 0 8px; border-bottom:1px solid var(--border); margin-bottom:10px; }
+.ro-card { background:var(--surface); border:1px solid var(--border2); border-radius:5px; padding:12px 14px; margin-bottom:8px; }
+.ro-card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
+.ro-card-ticker { font-family:var(--mono); font-size:15px; color:var(--text); letter-spacing:0.1em; }
+.ro-card-name { font-size:10px; color:var(--text3); font-style:italic; margin-top:2px; }
+.ro-card-badge { font-family:var(--mono); font-size:8px; letter-spacing:0.14em; padding:3px 8px; border-radius:3px; text-transform:uppercase; }
+.ro-badge-strong { background:rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.3); color:var(--green); }
+.ro-badge-moderate { background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.3); color:var(--amber); }
+.ro-badge-weak { background:rgba(248,113,113,0.08); border:1px solid rgba(248,113,113,0.25); color:var(--red); }
+.ro-badge-insufficient { background:rgba(255,255,255,0.03); border:1px solid var(--border2); color:var(--text3); }
+.ro-metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:8px; }
+.ro-metric { background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:7px 8px; text-align:center; }
+.ro-metric-label { font-family:var(--mono); font-size:7px; color:var(--text3); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:3px; }
+.ro-metric-val { font-family:var(--mono); font-size:13px; font-weight:700; }
+.ro-metric-sub { font-size:8px; color:var(--text3); margin-top:2px; font-style:italic; }
+.ro-observation { font-size:11px; color:var(--text3); font-style:italic; line-height:1.55; border-top:1px solid var(--border); padding-top:8px; margin-top:4px; }
+.ro-load-into-scanner { background:transparent; border:1px solid var(--border2); color:var(--text3); font-family:var(--mono); font-size:8px; letter-spacing:0.12em; padding:5px 10px; border-radius:3px; cursor:pointer; transition:all 0.2s; margin-top:8px; }
+.ro-load-into-scanner:hover { border-color:var(--gold); color:var(--gold); }
+.ro-error { font-family:var(--mono); font-size:10px; color:var(--text3); font-style:italic; }
 .fav-add-hint { font-size:11px; color:var(--text3); font-style:italic; }
 
 /* SCANNER RESULT */
@@ -638,28 +678,49 @@ body::before {
   <div class="tab-content" id="tab-scanner">
     <div class="section-wrap">
 
-      <!-- SEARCH -->
-      <div class="scanner-search-wrap" style="position:relative;flex-wrap:wrap">
-        <div style="position:relative;flex:1">
-          <input class="scanner-input" type="text" id="scanner-input" placeholder="Enter dividend-cycle ticker (e.g. KSLV, AAPL, XOM…)" maxlength="25" autocomplete="off" autocorrect="off" autocapitalize="characters" />
+      <!-- MODE TABS -->
+      <div class="scanner-mode-tabs">
+        <button class="scanner-mode-btn active" id="mode-btn-single" onclick="switchScannerMode('single',this)">Single Ticker</button>
+        <button class="scanner-mode-btn" id="mode-btn-observe" onclick="switchScannerMode('observe',this)">Rhythm Observation</button>
+      </div>
+
+      <!-- ── SINGLE TICKER MODE ── -->
+      <div id="scanner-mode-single">
+        <div class="scanner-search-wrap" style="position:relative;flex-wrap:wrap">
+          <div style="position:relative;flex:1">
+            <input class="scanner-input" type="text" id="scanner-input" placeholder="Enter dividend-cycle ticker (e.g. KSLV, AAPL, XOM…)" maxlength="25" autocomplete="off" autocorrect="off" autocapitalize="characters" />
+          </div>
+          <button class="scan-btn" id="scan-btn" onclick="runScan()">SCAN</button>
         </div>
-        <button class="scan-btn" id="scan-btn" onclick="runScan()">SCAN</button>
-      </div>
-      <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:10px;letter-spacing:0.05em">
-        Designed for dividend-cycle equities and ETFs. For broader market scanning, see MarketScan.
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:10px;letter-spacing:0.05em">
+          Designed for dividend-cycle equities and ETFs.
+        </div>
+        <div class="fav-section" id="fav-section">
+          <div class="fav-label">Saved Favorites</div>
+          <div class="fav-chips" id="fav-chips"></div>
+        </div>
+        <div id="scanner-area">
+          <div class="scanner-empty">
+            <div class="scanner-empty-icon">⟳</div>
+            <div class="scanner-empty-text">ENTER A TICKER TO SCAN FOR RHYTHM</div>
+          </div>
+        </div>
       </div>
 
-      <!-- FAVORITES -->
-      <div class="fav-section" id="fav-section">
-        <div class="fav-label">Saved Favorites</div>
-        <div class="fav-chips" id="fav-chips"></div>
-      </div>
-
-      <!-- RESULT AREA -->
-      <div id="scanner-area">
-        <div class="scanner-empty">
-          <div class="scanner-empty-icon">⟳</div>
-          <div class="scanner-empty-text">ENTER A TICKER TO SCAN FOR RHYTHM</div>
+      <!-- ── RHYTHM OBSERVATION MODE ── -->
+      <div id="scanner-mode-observe" style="display:none">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:14px;letter-spacing:0.05em;line-height:1.7">
+          RHYTHM OBSERVATION — Evaluate a small, curated list for historically observable cyclical behavior.<br>
+          <span style="color:var(--text3);font-style:italic;font-family:var(--serif);font-size:11px;letter-spacing:0">Results describe historical structure only. Not a recommendation. Not predictive.</span>
+        </div>
+        <div class="ro-wrap">
+          <div class="ro-ticker-row">
+            <input class="ro-ticker-input" type="text" id="ro-input" placeholder="Add ticker (e.g. KSLV)" maxlength="12" autocomplete="off" autocorrect="off" autocapitalize="characters" />
+            <button class="ro-add-btn" onclick="roAddTicker()">+ ADD</button>
+          </div>
+          <div class="ro-list" id="ro-list"></div>
+          <button class="ro-run-btn" id="ro-run-btn" onclick="runRhythmObservation()">RUN RHYTHM OBSERVATION</button>
+          <div id="ro-results"></div>
         </div>
       </div>
 
@@ -1047,8 +1108,12 @@ window.addEventListener('DOMContentLoaded', () => {
   if (API_KEY) showApp();
   document.getElementById('api-key-input').addEventListener('keydown', e => { if(e.key==='Enter') saveKey(); });
   document.getElementById('scanner-input').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') runScan();
-});
+    if (e.key === 'Enter') runScan();
+  });
+  var roInputEl = document.getElementById('ro-input');
+  if (roInputEl) roInputEl.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') roAddTicker();
+  });
   // handleWLKey is set via oninput/onkeydown on the element directly
 });
 
@@ -1069,6 +1134,7 @@ function showApp() {
   refreshPortfolio();
   loadRhythm('KSLV');
   renderFavorites();
+  roRenderList();
   applyRiskProfile();
   initJournal();
 }
@@ -1769,6 +1835,221 @@ function toggleFav(ticker) {
     const btn = document.getElementById(`fav-btn-${ticker}`);
     if(btn){btn.textContent='★ Saved';btn.classList.add('saved');}
   }
+}
+
+// ════════════════════════════════════════════════════════
+// SCANNER MODE SWITCHING
+// ════════════════════════════════════════════════════════
+function switchScannerMode(mode, btn) {
+  document.querySelectorAll('.scanner-mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('scanner-mode-single').style.display  = mode === 'single'  ? '' : 'none';
+  document.getElementById('scanner-mode-observe').style.display = mode === 'observe' ? '' : 'none';
+  if (mode === 'observe') roRenderList();
+}
+
+// ════════════════════════════════════════════════════════
+// RHYTHM OBSERVATION ENGINE
+// ════════════════════════════════════════════════════════
+let roTickers = JSON.parse(localStorage.getItem('ro_tickers') || '[]');
+const RO_MAX = 15;
+
+function roSaveTickers() {
+  localStorage.setItem('ro_tickers', JSON.stringify(roTickers));
+}
+
+function roRenderList() {
+  const el = document.getElementById('ro-list');
+  if (!el) return;
+  if (!roTickers.length) {
+    el.innerHTML = '<span style="font-family:var(--mono);font-size:9px;color:var(--text3);font-style:italic">No tickers added yet. Add up to ' + RO_MAX + '.</span>';
+    return;
+  }
+  el.innerHTML = roTickers.map(t =>
+    '<div class="ro-chip">'
+    + '<span class="ro-chip-text">' + t + '</span>'
+    + '<span class="ro-chip-remove" onclick="roRemoveTicker(\'' + t + '\')">\u00d7</span>'
+    + '</div>'
+  ).join('');
+}
+
+function roAddTicker() {
+  var input = document.getElementById('ro-input');
+  var val = (input.value || '').trim().toUpperCase().replace(/[^A-Z0-9:.]/g,'');
+  if (!val) return;
+  if (roTickers.includes(val)) { input.value=''; return; }
+  if (roTickers.length >= RO_MAX) {
+    input.value='';
+    alert('Maximum ' + RO_MAX + ' tickers for Rhythm Observation. Remove one first.');
+    return;
+  }
+  roTickers.push(val);
+  roSaveTickers();
+  roRenderList();
+  input.value='';
+}
+
+function roRemoveTicker(ticker) {
+  roTickers = roTickers.filter(t => t !== ticker);
+  roSaveTickers();
+  roRenderList();
+}
+
+function roOpenSingle(ticker) {
+  loadFavorite(ticker);
+  switchScannerMode('single', document.getElementById('mode-btn-single'));
+}
+
+// Pre-load a ticker from the single scanner into Rhythm Observation
+function roLoadTicker(ticker) {
+  if (!roTickers.includes(ticker) && roTickers.length < RO_MAX) {
+    roTickers.push(ticker);
+    roSaveTickers();
+  }
+  switchScannerMode('observe', document.getElementById('mode-btn-observe'));
+}
+
+async function runRhythmObservation() {
+  if (!roTickers.length) return;
+  const btn = document.getElementById('ro-run-btn');
+  const resultsEl = document.getElementById('ro-results');
+  btn.disabled = true;
+  btn.textContent = 'OBSERVING…';
+
+  // Fetch all tickers in sequence (not parallel) to be kind to rate limits
+  const observations = [];
+  for (let i = 0; i < roTickers.length; i++) {
+    const ticker = roTickers[i];
+    resultsEl.innerHTML = '<div class="ro-progress">Analyzing ' + ticker + ' (' + (i+1) + ' of ' + roTickers.length + ')…</div>';
+    try {
+      // Small stagger between requests
+      if (i > 0) await new Promise(r => setTimeout(r, 400));
+      const [quoteRes, candleRes, divRes, nameRes] = await Promise.allSettled([
+        finnhubQuote(ticker),
+        finnhubCandles(ticker, 365),
+        finnhubDividends(ticker),
+        finnhubProfile(ticker),
+      ]);
+      const quote   = quoteRes.status==='fulfilled'   ? quoteRes.value  : null;
+      const candles = candleRes.status==='fulfilled'  ? candleRes.value : null;
+      const divs    = divRes.status==='fulfilled'     ? divRes.value    : [];
+      const name    = nameRes.status==='fulfilled'    ? nameRes.value   : ticker;
+      observations.push({ ticker, quote, candles, divs, name });
+    } catch(e) {
+      observations.push({ ticker, quote:null, candles:null, divs:[], name:ticker, error:true });
+    }
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'RUN RHYTHM OBSERVATION';
+  renderRhythmObservation(observations);
+}
+
+function roClassify(score, candles, divs) {
+  if (!candles || candles.closes.length < 30) return 'insufficient';
+  if (score >= 68) return 'strong';
+  if (score >= 40) return 'moderate';
+  return 'weak';
+}
+
+function roObservationText(ticker, tier, score, cycles, naturalCycles, divs) {
+  const hasDivs = divs && divs.length > 0;
+  const nc = naturalCycles;
+  if (tier === 'insufficient') {
+    return 'Insufficient price history to assess cyclical structure. Minimum 30 trading days required.';
+  }
+  if (tier === 'strong') {
+    let t = 'Historical data shows a ' + (hasDivs ? 'dividend-linked ' : '') + 'cyclical pattern with notable consistency.';
+    if (nc) t += ' Natural price cycles average approximately ' + nc.avgCycleDays + ' days peak-to-peak with ' + Math.round(nc.consistency*100) + '% regularity.';
+    if (hasDivs && cycles.length >= 2) {
+      var avgPost = cycles.reduce((s,c)=>s+c.postMove,0)/cycles.length;
+      t += ' Post-ex-div behavior has historically shown ' + (avgPost >= 0 ? 'recovery tendency' : 'persistent softness') + ' over the 7-day window.';
+    }
+    t += ' Structural behavior appears more observable than the broader average. Does not imply future repeatability.';
+    return t;
+  }
+  if (tier === 'moderate') {
+    let t = 'Some cyclical structure is observable in historical data, though consistency is uneven.';
+    if (nc) t += ' Price cycles average roughly ' + nc.avgCycleDays + ' days, but regularity (' + Math.round(nc.consistency*100) + '%) suggests external events frequently override the pattern.';
+    t += ' May warrant additional context before drawing conclusions from rhythm alone.';
+    return t;
+  }
+  // weak
+  return 'Historical price behavior appears irregular or externally driven. Cyclical structure is not clearly observable in the available data window. Rhythm-based context has limited usefulness here.';
+}
+
+function renderRhythmObservation(observations) {
+  const resultsEl = document.getElementById('ro-results');
+
+  // Score and classify each
+  const scored = observations.map(obs => {
+    const { ticker, quote, candles, divs, name, error } = obs;
+    if (error || !candles) return { ticker, name, tier:'insufficient', score:0, cycles:[], nc:null, quote, divs };
+    const cycles = analyzeCycles(candles.map, divs);
+    const nc = findNaturalCycles(candles.closes);
+    const hasDivs = divs && divs.length > 0;
+    const score = waveScore(cycles, nc, hasDivs);
+    const tier = roClassify(score, candles, divs);
+    return { ticker, name, tier, score, cycles, nc, quote, divs };
+  });
+
+  // Group by tier
+  const groups = [
+    { key:'strong',       label:'Strong Observable Rhythm',       badge:'ro-badge-strong'      },
+    { key:'moderate',     label:'Moderate Observable Rhythm',     badge:'ro-badge-moderate'    },
+    { key:'weak',         label:'Weak / Inconsistent Rhythm',     badge:'ro-badge-weak'        },
+    { key:'insufficient', label:'Insufficient Data',              badge:'ro-badge-insufficient'},
+  ];
+
+  let html = '';
+  groups.forEach(function(g) {
+    const items = scored.filter(s => s.tier === g.key);
+    if (!items.length) return;
+    html += '<div class="ro-group-label">' + g.label + ' &nbsp;(' + items.length + ')</div>';
+    items.forEach(function(obs) {
+      const { ticker, name, tier, score, cycles, nc, quote, divs } = obs;
+      const hasDivs = divs && divs.length > 0;
+      const scoreColor = score>=68?'var(--green)':score>=40?'var(--amber)':tier==='insufficient'?'var(--text3)':'var(--red)';
+
+      // Avg cycle length
+      var avgCycle = nc ? nc.avgCycleDays + 'd' : '—';
+      // Consistency
+      var consistency = nc ? Math.round(nc.consistency*100) + '%' : '—';
+      // Div rhythm
+      var divRhythm = hasDivs && divs.length >= 2 ? divs.length + ' cycles' : hasDivs ? '1 cycle' : 'None';
+      // Data confidence
+      var confidence = tier === 'insufficient' ? 'Low' : cycles.length >= 4 && nc ? 'Good' : cycles.length >= 2 || nc ? 'Moderate' : 'Low';
+      var confColor = confidence==='Good'?'var(--green)':confidence==='Moderate'?'var(--amber)':'var(--text3)';
+
+      var observationText = roObservationText(ticker, tier, score, cycles, nc, divs);
+
+      html += '<div class="ro-card">'
+        + '<div class="ro-card-header">'
+        +   '<div>'
+        +     '<div class="ro-card-ticker">' + ticker + '</div>'
+        +     '<div class="ro-card-name">' + (name && name!==ticker ? name : (quote ? (quote.price ? '' : '') : '')) + '</div>'
+        +   '</div>'
+        +   '<div style="text-align:right">'
+        +     '<span class="ro-card-badge ' + g.badge + '">' + g.label.split(' ')[0] + '</span>'
+        +     (quote ? '<div style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-top:5px">' + fmtUSD(quote.price) + '</div>' : '')
+        +   '</div>'
+        + '</div>'
+        + '<div class="ro-metrics">'
+        +   '<div class="ro-metric"><div class="ro-metric-label">Wave Score</div><div class="ro-metric-val" style="color:' + scoreColor + '">' + (tier==='insufficient'?'—':score) + '</div><div class="ro-metric-sub">historical</div></div>'
+        +   '<div class="ro-metric"><div class="ro-metric-label">Avg Cycle</div><div class="ro-metric-val" style="color:var(--blue)">' + avgCycle + '</div><div class="ro-metric-sub">peak to peak</div></div>'
+        +   '<div class="ro-metric"><div class="ro-metric-label">Consistency</div><div class="ro-metric-val" style="color:' + scoreColor + '">' + consistency + '</div><div class="ro-metric-sub">regularity</div></div>'
+        +   '<div class="ro-metric"><div class="ro-metric-label">Div History</div><div class="ro-metric-val" style="color:var(--text2);font-size:11px">' + divRhythm + '</div><div class="ro-metric-sub">observed</div></div>'
+        +   '<div class="ro-metric"><div class="ro-metric-label">Data Quality</div><div class="ro-metric-val" style="color:' + confColor + ';font-size:11px">' + confidence + '</div><div class="ro-metric-sub">sample size</div></div>'
+        +   '<div class="ro-metric"><div class="ro-metric-label">Vol Structure</div><div class="ro-metric-val" style="color:var(--text2);font-size:10px">' + (nc ? (nc.avgGain ? '+' + fmt(nc.avgGain)+'%' : '—') : '—') + '</div><div class="ro-metric-sub">avg wave gain</div></div>'
+        + '</div>'
+        + '<div class="ro-observation">' + observationText + '</div>'
+        + '<button class="ro-load-into-scanner" onclick="roOpenSingle(\'' + ticker + '\')">⟳ Full single-ticker analysis →</button>'
+        + '</div>';
+    });
+  });
+
+  if (!html) html = '<div class="ro-progress">No results to display.</div>';
+  resultsEl.innerHTML = html;
 }
 
 // ════════════════════════════════════════════════════════
