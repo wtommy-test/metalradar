@@ -837,6 +837,7 @@ let API_KEY = localStorage.getItem('finnhub_api_key') || '';
 let quoteData = {}, candleData = {}, btcQuote = null;
 let rhythmCache = {}, rhythmTicker = 'KSLV';
 let scanCache = {};
+let cryptoExpand = null;
 let favorites = JSON.parse(localStorage.getItem('mr_favorites') || '[]');
 
 const WINDOW_DAYS = 7;
