@@ -155,6 +155,20 @@ body::before {
 .fav-chip-remove { font-size:13px; color:var(--text3); line-height:1; transition:color 0.2s; }
 .fav-chip-remove:hover { color:var(--red); }
 
+/* ── DATA BACKUP / RESTORE ── */
+.backup-panel { background:var(--surface); border:1px solid var(--border2); border-radius:5px; padding:14px; margin-bottom:16px; }
+.backup-title { font-family:var(--mono); font-size:9px; letter-spacing:0.18em; text-transform:uppercase; color:var(--text3); margin-bottom:4px; }
+.backup-subtitle { font-size:11px; color:var(--text3); font-style:italic; margin-bottom:12px; line-height:1.5; }
+.backup-btn-row { display:flex; gap:8px; flex-wrap:wrap; }
+.backup-btn { flex:1; min-width:120px; font-family:var(--mono); font-size:9px; letter-spacing:0.14em; text-transform:uppercase; padding:10px 12px; border-radius:4px; cursor:pointer; transition:all 0.2s; text-align:center; }
+.backup-btn-export { background:transparent; border:1px solid var(--gold); color:var(--gold); }
+.backup-btn-export:hover { background:rgba(212,175,55,0.08); }
+.backup-btn-import { background:transparent; border:1px solid var(--border2); color:var(--text2); }
+.backup-btn-import:hover { border-color:var(--text2); }
+.backup-status { font-family:var(--mono); font-size:10px; margin-top:10px; padding:8px 10px; border-radius:4px; display:none; }
+.backup-status.ok  { background:rgba(74,222,128,0.08); border:1px solid rgba(74,222,128,0.25); color:var(--green); }
+.backup-status.err { background:rgba(248,113,113,0.08); border:1px solid rgba(248,113,113,0.25); color:var(--red); }
+
 /* ── RHYTHM OBSERVATION MODE ── */
 .scanner-mode-tabs { display:flex; gap:0; margin-bottom:18px; border:1px solid var(--border2); border-radius:5px; overflow:hidden; }
 .scanner-mode-btn { flex:1; font-family:var(--mono); font-size:9px; letter-spacing:0.14em; text-transform:uppercase; padding:9px 8px; background:transparent; border:none; color:var(--text3); cursor:pointer; transition:all 0.2s; }
@@ -193,6 +207,19 @@ body::before {
 .ro-observation { font-size:11px; color:var(--text3); font-style:italic; line-height:1.55; border-top:1px solid var(--border); padding-top:8px; margin-top:4px; }
 .ro-load-into-scanner { background:transparent; border:1px solid var(--border2); color:var(--text3); font-family:var(--mono); font-size:8px; letter-spacing:0.12em; padding:5px 10px; border-radius:3px; cursor:pointer; transition:all 0.2s; margin-top:8px; }
 .ro-load-into-scanner:hover { border-color:var(--gold); color:var(--gold); }
+
+/* ── TRADE NOTES LOG ── */
+.trade-notes-log { margin-top:10px; border-top:1px solid var(--border); padding-top:10px; }
+.trade-notes-log-label { font-family:var(--mono); font-size:8px; letter-spacing:0.16em; text-transform:uppercase; color:var(--text3); margin-bottom:8px; }
+.trade-note-entry { background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:8px 10px; margin-bottom:6px; }
+.trade-note-ts { font-family:var(--mono); font-size:8px; color:var(--text3); letter-spacing:0.06em; margin-bottom:3px; }
+.trade-note-text { font-size:12px; color:var(--text2); line-height:1.55; font-style:italic; }
+.trade-note-add-row { display:flex; gap:6px; margin-top:8px; align-items:flex-start; }
+.trade-note-textarea { flex:1; background:var(--bg); border:1px solid var(--border2); color:var(--text); font-size:12px; font-family:var(--serif); padding:8px 10px; border-radius:4px; outline:none; resize:none; min-height:52px; line-height:1.5; }
+.trade-note-textarea:focus { border-color:var(--gold); }
+.trade-note-add-btn { background:transparent; border:1px solid var(--border2); color:var(--text3); font-family:var(--mono); font-size:9px; letter-spacing:0.1em; padding:8px 10px; border-radius:4px; cursor:pointer; white-space:nowrap; transition:all 0.2s; align-self:flex-end; }
+.trade-note-add-btn:hover { border-color:var(--gold); color:var(--gold); }
+.trade-note-empty { font-size:11px; color:var(--text3); font-style:italic; }
 .ro-error { font-family:var(--mono); font-size:10px; color:var(--text3); font-style:italic; }
 .fav-add-hint { font-size:11px; color:var(--text3); font-style:italic; }
 
@@ -867,6 +894,20 @@ body::before {
           <div style="font-size:12px;color:var(--text3);font-style:italic">Log at least one buy and one sell to see cycle analysis.</div>
         </div>
         </div><!-- end cycle-body -->
+      </div>
+
+      <!-- DATA BACKUP / RESTORE -->
+      <div class="backup-panel">
+        <div class="backup-title">Data Backup &amp; Restore</div>
+        <div class="backup-subtitle">Export saves all your trades, thesis notes, targets, and watchlist to a local JSON file on your device. Import restores from a previously exported file. No cloud involved — your data stays with you.</div>
+        <div class="backup-btn-row">
+          <button class="backup-btn backup-btn-export" onclick="exportWatchtowerData()">&#8681; Export Backup</button>
+          <label class="backup-btn backup-btn-import" style="cursor:pointer">
+            &#8679; Import Backup
+            <input type="file" id="backup-import-input" accept=".json" style="display:none" onchange="importWatchtowerData(this)" />
+          </label>
+        </div>
+        <div class="backup-status" id="backup-status"></div>
       </div>
 
       <!-- TRADE HISTORY -->
@@ -2528,6 +2569,113 @@ function renderCycleAnalysis() {
 
 
 // ════════════════════════════════════════════════════════
+// DATA BACKUP & RESTORE
+// ════════════════════════════════════════════════════════
+const WATCHTOWER_BACKUP_KEYS = [
+  { key: 'mr_trades',       label: 'Trade Journal'    },
+  { key: 'mr_thesis',       label: 'Thesis Notes'     },
+  { key: 'mr_targets',      label: 'Price Targets'    },
+  { key: 'mr_watchlist',    label: 'Watchlist'        },
+  { key: 'mr_favorites',    label: 'Scanner Favorites'},
+  { key: 'ro_tickers',      label: 'Rhythm Observe'   },
+  { key: 'mr_risk_profile', label: 'Risk Profile'     },
+];
+
+function exportWatchtowerData() {
+  try {
+    var backup = {
+      version: '1.0',
+      exported: new Date().toISOString(),
+      app: 'Watchtower',
+      data: {}
+    };
+    WATCHTOWER_BACKUP_KEYS.forEach(function(item) {
+      var val = localStorage.getItem(item.key);
+      backup.data[item.key] = val ? JSON.parse(val) : null;
+    });
+
+    var json = JSON.stringify(backup, null, 2);
+    var blob = new Blob([json], { type: 'application/json' });
+    var url  = URL.createObjectURL(blob);
+    var date = new Date().toISOString().slice(0,10);
+    var a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'Watchtower-backup-' + date + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    backupStatus('ok', '✓ Backup exported — saved to your device as Watchtower-backup-' + date + '.json');
+  } catch(e) {
+    backupStatus('err', '✕ Export failed: ' + e.message);
+  }
+}
+
+function importWatchtowerData(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var backup = JSON.parse(e.target.result);
+      // Validate it's a Watchtower backup
+      if (!backup.app || backup.app !== 'Watchtower' || !backup.data) {
+        backupStatus('err', '✕ This does not appear to be a valid Watchtower backup file.');
+        return;
+      }
+      // Confirm before overwriting
+      var exported = backup.exported ? ' (exported ' + backup.exported.slice(0,10) + ')' : '';
+      if (!confirm('Restore Watchtower backup' + exported + '? This will overwrite your current trades, thesis notes, targets, and watchlist. This cannot be undone.')) {
+        input.value = '';
+        return;
+      }
+      // Restore each key
+      var restored = [];
+      WATCHTOWER_BACKUP_KEYS.forEach(function(item) {
+        if (backup.data[item.key] !== undefined && backup.data[item.key] !== null) {
+          localStorage.setItem(item.key, JSON.stringify(backup.data[item.key]));
+          restored.push(item.label);
+        }
+      });
+      // Reload in-memory state and re-render
+      trades      = JSON.parse(localStorage.getItem('mr_trades')    || '[]');
+      targets     = JSON.parse(localStorage.getItem('mr_targets')   || '[]');
+      thesisData  = JSON.parse(localStorage.getItem('mr_thesis')    || '{}');
+      favorites   = JSON.parse(localStorage.getItem('mr_favorites') || '[]');
+      roTickers   = JSON.parse(localStorage.getItem('ro_tickers')   || '[]');
+      watchlist   = JSON.parse(localStorage.getItem('mr_watchlist') || '["KSLV","KGLD","MARA"]');
+      riskProfile = localStorage.getItem('mr_risk_profile') || 'cash';
+
+      renderTradeHistory();
+      renderCycleAnalysis();
+      renderTargets();
+      renderPatienceTracker();
+      renderFavorites();
+      roRenderList();
+      applyRiskProfile();
+
+      input.value = '';
+      backupStatus('ok', '✓ Restored: ' + restored.join(', ') + '. All data is back.');
+    } catch(err) {
+      backupStatus('err', '✕ Import failed — file may be corrupted: ' + err.message);
+      input.value = '';
+    }
+  };
+  reader.readAsText(file);
+}
+
+function backupStatus(type, msg) {
+  var el = document.getElementById('backup-status');
+  if (!el) return;
+  el.className = 'backup-status ' + type;
+  el.textContent = msg;
+  el.style.display = 'block';
+  // Auto-hide after 6 seconds for success, leave errors visible
+  if (type === 'ok') setTimeout(function() { el.style.display = 'none'; }, 6000);
+}
+
+// ════════════════════════════════════════════════════════
 // TARGET PRICE ALERTS
 // ════════════════════════════════════════════════════════
 let targets = JSON.parse(localStorage.getItem('mr_targets') || '[]');
@@ -3125,6 +3273,14 @@ function renderPatienceTracker() {
         // Snapshot
         + (thesis.snapshot ? '<div class="snapshot-wrap"><div class="thesis-label" style="margin-bottom:4px">Entry Chart Snapshot</div><img src="' + thesis.snapshot + '" class="snapshot-img" /></div>' : '')
 
+        // Trade Notes Log
+        + '<div class="trade-notes-log">'        + '<div class="trade-notes-log-label">Trade Notes Log</div>'        + (function() {
+            var notes = thesis.tradeNotes || [];
+            if (!notes.length) return '<div class="trade-note-empty">No notes yet. Add your first observation below.</div>';
+            return notes.map(function(n) {
+              return '<div class="trade-note-entry">'                + '<div class="trade-note-ts">' + n.ts + '</div>'                + '<div class="trade-note-text">' + n.text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>'                + '</div>';
+            }).join('');
+          })()        + '<div class="trade-note-add-row">'        + '<textarea class="trade-note-textarea" id="trade-note-input-' + key + '" placeholder="Day ' + daysSince + ' observation..." rows="2"></textarea>'        + '<button class="trade-note-add-btn" onclick="addTradeNote(\'' + key + '\')">+ ADD</button>'        + '</div>'        + '</div>'
         // Edit thesis button
         + '<button class="expand-btn" onclick="editThesis(\'' + key + '\')" style="margin-top:4px">&#9998; ' + (thesis.why?'Edit':'Add') + ' Trade Thesis</button>'
         + '</div>';
@@ -3140,6 +3296,28 @@ function renderPatienceTracker() {
       if (price) renderInvalidationAlert(ticker, price);
     });
   }, 100);
+}
+
+function addTradeNote(key) {
+  var input = document.getElementById('trade-note-input-' + key);
+  if (!input) return;
+  var text = (input.value || '').trim();
+  if (!text) return;
+
+  var thesis = thesisData[key] || {};
+  if (!thesis.tradeNotes) thesis.tradeNotes = [];
+
+  // Timestamp: date + time local
+  var now = new Date();
+  var ts = now.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+    + ' ' + now.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true });
+
+  thesis.tradeNotes.push({ ts: ts, text: text });
+  thesisData[key] = thesis;
+  localStorage.setItem('mr_thesis', JSON.stringify(thesisData));
+
+  input.value = '';
+  renderPatienceTracker();
 }
 
 function saveThesisForm(key) {
