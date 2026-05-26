@@ -2295,6 +2295,238 @@ function buildPositionRiskPanel(ticker, quote, naturalCycles, hasDivs) {
 }
 
 
+let trades = JSON.parse(localStorage.getItem('mr_trades') || '[]');
+
+function initJournal() {
+  // Set default date to today
+  const today = new Date().toISOString().slice(0,10);
+  const dateEl = document.getElementById('jf-date');
+  if (dateEl) dateEl.value = today;
+  renderTradeHistory();
+  renderCycleAnalysis();
+  renderTargets();
+  renderPatienceTracker();
+  initWNT();
+}
+
+function logTrade() {
+  const ticker  = (document.getElementById('jf-ticker').value || '').trim().toUpperCase();
+  const action  = document.getElementById('jf-action').value;
+  const price   = parseFloat(document.getElementById('jf-price').value);
+  const shares  = parseInt(document.getElementById('jf-shares').value);
+  const date    = document.getElementById('jf-date').value;
+  const notes   = (document.getElementById('jf-notes').value || '').trim();
+
+  if (!ticker || !price || !shares || !date) {
+    alert('Please fill in ticker, price, shares, and date.');
+    return;
+  }
+
+  var tradeTotal = action === 'dividend' ? price : price * shares;
+  const trade = {
+    id: Date.now(),
+    ticker, action, price, shares, date, notes,
+    total: tradeTotal,
+  };
+
+  trades.unshift(trade);
+  localStorage.setItem('mr_trades', JSON.stringify(trades));
+
+  // Clear form
+  document.getElementById('jf-ticker').value = '';
+  document.getElementById('jf-price').value = '';
+  document.getElementById('jf-shares').value = '';
+  document.getElementById('jf-notes').value = '';
+
+  renderTradeHistory();
+  renderCycleAnalysis();
+  renderPatienceTracker();
+}
+
+function deleteTrade(id) {
+  trades = trades.filter(t => t.id !== id);
+  localStorage.setItem('mr_trades', JSON.stringify(trades));
+  renderTradeHistory();
+  renderCycleAnalysis();
+}
+
+function clearJournal() {
+  if (!confirm('Clear all trade history? This cannot be undone.')) return;
+  trades = [];
+  localStorage.setItem('mr_trades', JSON.stringify(trades));
+  renderTradeHistory();
+  renderCycleAnalysis();
+}
+
+function renderTradeHistory() {
+  const el = document.getElementById('trade-history-content');
+  if (!el) return;
+  if (!trades.length) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--text3);font-style:italic">No trades logged yet. Start by logging your first entry above.</div>';
+    return;
+  }
+  el.innerHTML = trades.map(t => {
+    var isBuy = t.action === 'buy';
+    var isSell = t.action === 'sell';
+    var isDividend = t.action === 'dividend';
+    var rowClass = isDividend ? 'dividend-row' : isBuy ? 'buy-row' : 'sell-row';
+    var badgeClass = isDividend ? 'badge-dividend' : isBuy ? 'badge-buy' : 'badge-sell';
+    var badgeLabel = isDividend ? 'DIVIDEND' : isBuy ? 'BUY IN' : 'SELL OUT';
+    var dispPrice = isDividend ? fmtUSD(t.total||t.price) : fmtUSD(t.price);
+    var dispShares = isDividend ? (t.shares + ' shares held') : (t.shares + ' shares');
+    var totalLabel = isDividend ? 'Income received:' : isBuy ? 'Capital deployed:' : 'Proceeds:';
+    var totalAmt = isDividend ? fmtUSD(t.total||t.price) : fmtUSD(t.price * t.shares);
+    var priceColor = isDividend ? 'var(--gold)' : 'var(--text)';
+    return '<div class="trade-row ' + rowClass + '">'
+      + '<div class="trade-row-header">'
+      + '<div class="trade-row-left">'
+      + '<span class="trade-action-badge ' + badgeClass + '">' + badgeLabel + '</span>'
+      + '<span class="trade-ticker-label">' + t.ticker + '</span>'
+      + '</div>'
+      + '<div style="display:flex;align-items:flex-start;gap:10px">'
+      + '<div><div class="trade-price-label" style="color:' + priceColor + '">' + dispPrice + '</div><div class="trade-shares-label">' + dispShares + '</div></div>'
+      + '<button class="trade-delete" onclick="deleteTrade(' + t.id + ')">✕</button>'
+      + '</div>'
+      + '</div>'
+      + '<div class="trade-date-label">' + t.date + '</div>'
+      + '<div class="trade-total">' + totalLabel + ' ' + totalAmt + '</div>'
+      + (t.notes ? '<div class="trade-notes">"' + t.notes + '"</div>' : '')
+      + '</div>';
+  }).join('');
+}
+
+function renderCycleAnalysis() {
+  const el = document.getElementById('cycle-analysis-content');
+  if (!el) return;
+
+  // Group trades by ticker, then pair buys with sells
+  const byTicker = {};
+  trades.forEach(t => {
+    if (!byTicker[t.ticker]) byTicker[t.ticker] = [];
+    byTicker[t.ticker].push(t);
+  });
+
+  let html = '';
+  let totalCycles = 0, totalGainPct = 0, earlyCount = 0, lateExitCount = 0;
+
+  Object.keys(byTicker).forEach(ticker => {
+    const tickerTrades = [...byTicker[ticker]].sort((a,b) => new Date(a.date)-new Date(b.date));
+    const cycles = [];
+    let pendingBuy = null;
+
+    tickerTrades.forEach(t => {
+      if (t.action === 'buy') {
+        pendingBuy = t;
+      } else if (t.action === 'sell' && pendingBuy) {
+        cycles.push({ buy: pendingBuy, sell: t });
+        pendingBuy = null;
+      }
+    });
+
+    // Show open position if pending buy
+    if (pendingBuy) {
+      const currentPrice = quoteData[ticker]?.price;
+      const unrealizedPct = currentPrice ? ((currentPrice - pendingBuy.price) / pendingBuy.price) * 100 : null;
+      html += '<div class="cycle-card">'
+        + '<div class="cycle-card-header">'
+        + '<div class="cycle-ticker-name">' + ticker + ' <span style="font-size:10px;color:var(--amber);font-weight:400">OPEN POSITION</span></div>'
+        + (unrealizedPct !== null ? '<div class="cycle-result" style="color:' + (unrealizedPct>=0?'var(--green)':'var(--red)') + '">' + (unrealizedPct>=0?'+':'') + fmt(unrealizedPct) + '%</div>' : '<div class="cycle-result" style="color:var(--text3)">—</div>')
+        + '</div>'
+        + '<div class="cycle-stats">'
+        + '<div class="cycle-stat-item"><div class="cycle-stat-label">Entry Price</div><div class="cycle-stat-val">' + fmtUSD(pendingBuy.price) + '</div></div>'
+        + '<div class="cycle-stat-item"><div class="cycle-stat-label">Entry Date</div><div class="cycle-stat-val" style="font-size:11px">' + pendingBuy.date + '</div></div>'
+        + '<div class="cycle-stat-item"><div class="cycle-stat-label">Current</div><div class="cycle-stat-val">' + (currentPrice ? fmtUSD(currentPrice) : '—') + '</div></div>'
+        + '</div>'
+        + '<div class="timing-feedback info">⟳ Position open — exit not yet logged. Watching for cycle peak signal before selling.</div>'
+        + (pendingBuy.notes ? '<div class="trade-notes" style="margin-top:8px">"' + pendingBuy.notes + '"</div>' : '')
+        + '</div>';
+    }
+
+    // Completed cycles
+    cycles.forEach((cycle, i) => {
+      const gainPct = ((cycle.sell.price - cycle.buy.price) / cycle.buy.price) * 100;
+      // Sum dividends received during this cycle
+      var divIncome = trades.filter(function(tr){
+        return tr.ticker===ticker && tr.action==='dividend' && tr.date>=cycle.buy.date && tr.date<=cycle.sell.date;
+      }).reduce(function(s,tr){return s+(tr.total||0);},0);
+      const gainUSD = (cycle.sell.price - cycle.buy.price) * Math.min(cycle.buy.shares, cycle.sell.shares);
+      const holdDays = Math.round((new Date(cycle.sell.date) - new Date(cycle.buy.date)) / 86400000);
+      totalCycles++;
+      totalGainPct += gainPct;
+
+      // Timing feedback - compare to known cycle data in scanCache
+      const cached = scanCache[ticker];
+      const nc = cached?.naturalCycles;
+      let feedbackClass = 'info', feedbackText = '';
+
+      if (nc) {
+        const avgCycle = nc.avgCycleDays;
+        const avgGain  = nc.avgGain;
+        const capturedPct = (gainPct / avgGain) * 100;
+
+        if (gainPct < 0) {
+          feedbackClass = 'late';
+          feedbackText = '⚠ This cycle resulted in a loss. The exit may have been too early or the entry too late relative to the cycle. Review entry timing next cycle.';
+          earlyCount++;
+        } else if (capturedPct < 40) {
+          feedbackClass = 'early';
+          feedbackText = '⚠ You captured ' + fmt(capturedPct) + '% of the avg wave gain. You may have exited early — the cycle average is +' + fmt(avgGain) + '%. Consider holding closer to the detected peak next time.';
+          lateExitCount++;
+        } else if (capturedPct >= 40 && capturedPct < 75) {
+          feedbackClass = 'info';
+          feedbackText = 'ℹ You captured ' + fmt(capturedPct) + '% of the avg wave gain (+' + fmt(avgGain) + '% avg). Solid execution — room to improve timing toward the peak.';
+        } else {
+          feedbackClass = 'good';
+          feedbackText = '✓ Strong cycle execution — you captured ' + fmt(capturedPct) + '% of the historical avg wave gain. Timing is tracking well.';
+        }
+
+        if (holdDays < avgCycle * 0.4) {
+          feedbackClass = 'early';
+          feedbackText += ' Hold duration (' + holdDays + ' days) was shorter than the avg cycle (' + avgCycle + ' days) — you may be exiting before the wave peaks.';
+        }
+      } else {
+        feedbackText = 'Scan ' + ticker + ' in the Rhythm Scanner to unlock detailed timing analysis for this ticker.';
+      }
+
+      html += '<div class="cycle-card">'
+        + '<div class="cycle-card-header">'
+        + '<div><div class="cycle-ticker-name">' + ticker + ' — Cycle ' + (i+1) + '</div><div style="font-size:10px;color:var(--text3);margin-top:2px">' + cycle.buy.date + ' → ' + cycle.sell.date + ' (' + holdDays + ' days)</div></div>'
+        + '<div class="cycle-result" style="color:' + (gainPct>=0?'var(--green)':'var(--red)') + '">' + (gainPct>=0?'+':'') + fmt(gainPct) + '%</div>'
+        + '</div>'
+        + '<div class="cycle-stats">'
+        + '<div class="cycle-stat-item"><div class="cycle-stat-label">Entry</div><div class="cycle-stat-val">' + fmtUSD(cycle.buy.price) + '</div></div>'
+        + '<div class="cycle-stat-item"><div class="cycle-stat-label">Exit</div><div class="cycle-stat-val">' + fmtUSD(cycle.sell.price) + '</div></div>'
+        + '<div class="cycle-stat-item"><div class="cycle-stat-label">Price P&L</div><div class="cycle-stat-val" style="color:' + (gainUSD>=0?'var(--green)':'var(--red)') + '">' + (gainUSD>=0?'+':'') + fmtUSD(Math.abs(gainUSD)) + '</div></div>'
+        + '</div>'
+        + (divIncome>0 ? '<div style="display:flex;gap:8px;margin-bottom:10px">'
+          + '<div class="cycle-stat-item" style="flex:1"><div class="cycle-stat-label">Dividend Income</div><div class="cycle-stat-val" style="color:var(--gold)">+' + fmtUSD(divIncome) + '</div></div>'
+          + '<div class="cycle-stat-item" style="flex:1"><div class="cycle-stat-label">Total Return</div><div class="cycle-stat-val" style="color:var(--green)">+' + fmtUSD(gainUSD+divIncome) + '</div></div>'
+          + '</div>' : '')
+        + '<div class="timing-feedback ' + feedbackClass + '">' + feedbackText + '</div>'
+        + '</div>';
+    });
+  });
+
+  // Overall habit summary if multiple cycles
+  if (totalCycles >= 2) {
+    const avgGainPct = totalGainPct / totalCycles;
+    html += '<div class="habit-box">'
+      + '<div class="habit-box-label">Your Trading Habits — ' + totalCycles + ' Completed Cycles</div>'
+      + '<div class="habit-row"><span class="habit-label">Avg gain per cycle</span><span class="habit-val" style="color:' + (avgGainPct>=0?'var(--green)':'var(--red)') + '">' + (avgGainPct>=0?'+':'') + fmt(avgGainPct) + '%</span></div>'
+      + '<div class="habit-row"><span class="habit-label">Cycles with gains</span><span class="habit-val" style="color:var(--green)">' + trades.filter((t,i,a) => { return false; }).length + totalCycles + ' of ' + totalCycles + '</span></div>'
+      + '<div class="habit-row"><span class="habit-label">Early exits detected</span><span class="habit-val" style="color:' + (lateExitCount>0?'var(--amber)':'var(--green)') + '">' + lateExitCount + '</span></div>'
+      + '<div class="habit-row"><span class="habit-label">Loss cycles</span><span class="habit-val" style="color:' + (earlyCount>0?'var(--red)':'var(--green)') + '">' + earlyCount + '</span></div>'
+      + '</div>';
+  }
+
+  if (!html) {
+    html = '<div style="font-size:12px;color:var(--text3);font-style:italic">Log at least one buy and one sell on the same ticker to see cycle analysis.</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+
 // ════════════════════════════════════════════════════════
 // TARGET PRICE ALERTS
 // ════════════════════════════════════════════════════════
