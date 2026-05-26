@@ -588,8 +588,13 @@ body::before {
   <div class="setup-box">
     <div class="setup-label">Finnhub API Key</div>
     <input class="setup-input" type="password" id="api-key-input" placeholder="Enter your Finnhub API key" />
-    <button class="setup-btn" onclick="saveKey()">CONNECT</button>
-    <div class="setup-note">Stored locally — never transmitted anywhere else</div>
+    <div style="margin-top:14px;border-top:1px solid #1e1e1e;padding-top:14px">
+      <div class="setup-label">Tiingo API Key <span style="font-family:var(--serif);font-size:10px;color:var(--text3);letter-spacing:0;text-transform:none;font-style:italic">— for chart history (free at tiingo.com)</span></div>
+      <input class="setup-input" type="password" id="tiingo-key-input" placeholder="Enter your Tiingo API key (optional)" />
+      <div style="font-size:9px;color:var(--text3);font-style:italic;margin-top:4px;line-height:1.6">Tiingo provides reliable historical price data directly — no third-party proxy required. Strongly recommended for consistent chart rendering.</div>
+    </div>
+    <button class="setup-btn" onclick="saveKey()" style="margin-top:14px">CONNECT</button>
+    <div class="setup-note">Both keys stored locally — never transmitted anywhere else</div>
       <div style="margin-top:16px;padding:12px;background:rgba(255,255,255,0.04);border:1px solid #2a2a2a;border-radius:4px;font-size:10px;color:#555;line-height:1.6;text-align:center;font-style:italic">
         Watchtower is an informational and educational situational awareness tool.<br>
         All investment decisions remain solely the responsibility of the user.
@@ -936,6 +941,7 @@ body::before {
 // GLOBALS
 // ════════════════════════════════════════════════════════
 let API_KEY = localStorage.getItem('finnhub_api_key') || '';
+let TIINGO_KEY = localStorage.getItem('tiingo_api_key') || '';
 let quoteData = {}, candleData = {}, btcQuote = null;
 let rhythmCache = {}, rhythmTicker = 'KSLV';
 let scanCache = {};
@@ -1149,6 +1155,11 @@ const RHYTHM_ETF_DIVS = {
 window.addEventListener('DOMContentLoaded', () => {
   if (API_KEY) showApp();
   document.getElementById('api-key-input').addEventListener('keydown', e => { if(e.key==='Enter') saveKey(); });
+  var tiingoInput = document.getElementById('tiingo-key-input');
+  if (tiingoInput) {
+    if (TIINGO_KEY) tiingoInput.value = TIINGO_KEY;
+    tiingoInput.addEventListener('keydown', e => { if(e.key==='Enter') saveKey(); });
+  }
   document.getElementById('scanner-input').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') runScan();
   });
@@ -1164,6 +1175,11 @@ function saveKey() {
   if (!k) return;
   API_KEY = k;
   localStorage.setItem('finnhub_api_key', k);
+  const tk = (document.getElementById('tiingo-key-input').value || '').trim();
+  if (tk) {
+    TIINGO_KEY = tk;
+    localStorage.setItem('tiingo_api_key', tk);
+  }
   showApp();
 }
 
@@ -1203,10 +1219,37 @@ async function finnhubQuote(symbol) {
 }
 
 async function finnhubCandles(symbol, days=365) {
-  // Use Yahoo Finance for historical candles — Finnhub free tier restricts this endpoint
-  // Yahoo has free unlimited OHLCV history, no API key needed
   const to = Math.floor(Date.now()/1000);
   const from = to - days*86400;
+
+  // ── TIER 1: Tiingo direct (no proxy needed, reliable, free) ──
+  if (TIINGO_KEY) {
+    try {
+      const startDate = new Date((from)*1000).toISOString().slice(0,10);
+      const endDate   = new Date((to)*1000).toISOString().slice(0,10);
+      const tiingoUrl = `https://api.tiingo.com/tiingo/daily/${encodeURIComponent(symbol)}/prices?startDate=${startDate}&endDate=${endDate}&token=${TIINGO_KEY}`;
+      const r = await fetchWithTimeout(tiingoUrl, 8000);
+      if (r.ok) {
+        const d = await r.json();
+        if (Array.isArray(d) && d.length >= 10) {
+          const validRows = d.filter(row => row.close !== null && !isNaN(row.close));
+          if (validRows.length >= 10) {
+            const closes = validRows.map(row => row.close);
+            const timestamps = validRows.map(row => Math.floor(new Date(row.date).getTime()/1000));
+            const map = {};
+            validRows.forEach(row => {
+              map[row.date.slice(0,10)] = row.close;
+            });
+            return { closes, timestamps, map };
+          }
+        }
+      }
+    } catch(e) {
+      console.log('Tiingo candle fetch failed, trying Yahoo proxy:', e.message);
+    }
+  }
+
+  // ── TIER 2: Yahoo Finance via CORS proxy chain ──
   const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&period1=${from}&period2=${to}&range=1y`;
   try {
     const result = await fetchYahooViaCorsProxy(yahooUrl, 5000);
@@ -1214,7 +1257,6 @@ async function finnhubCandles(symbol, days=365) {
     const closes = result.indicators?.quote?.[0]?.close;
     const timestamps = result.timestamp;
     if (!closes || !timestamps || closes.length < 10) return null;
-    // Filter out null closes
     const validCloses = [], validTs = [];
     closes.forEach((c, i) => {
       if (c !== null && c !== undefined && !isNaN(c)) {
@@ -1229,18 +1271,19 @@ async function finnhubCandles(symbol, days=365) {
     });
     return { closes:validCloses, timestamps:validTs, map };
   } catch(e) {
-    console.log('Yahoo candle fetch failed, trying Finnhub direct:', e.message);
-    // Fallback to Finnhub candles direct (no CORS proxy needed)
-    try {
-      const fbUrl = `https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(symbol)}&resolution=D&from=${from}&to=${to}&token=${API_KEY}`;
-      const r2 = await fetchWithTimeout(fbUrl, 6000);
-      const d2 = await r2.json();
-      if (d2.s !== 'ok' || !d2.t?.length) return null;
-      const map = {};
-      d2.t.forEach((ts,i) => { map[new Date(ts*1000).toISOString().slice(0,10)] = d2.c[i]; });
-      return { closes:d2.c, timestamps:d2.t, map };
-    } catch { return null; }
+    console.log('Yahoo proxy failed, trying Finnhub direct:', e.message);
   }
+
+  // ── TIER 3: Finnhub direct (free tier may restrict, but worth trying) ──
+  try {
+    const fbUrl = `https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(symbol)}&resolution=D&from=${from}&to=${to}&token=${API_KEY}`;
+    const r2 = await fetchWithTimeout(fbUrl, 6000);
+    const d2 = await r2.json();
+    if (d2.s !== 'ok' || !d2.t?.length) return null;
+    const map = {};
+    d2.t.forEach((ts,i) => { map[new Date(ts*1000).toISOString().slice(0,10)] = d2.c[i]; });
+    return { closes:d2.c, timestamps:d2.t, map };
+  } catch { return null; }
 }
 
 async function finnhubDividends(symbol) {
@@ -2581,6 +2624,7 @@ const WATCHTOWER_BACKUP_KEYS = [
   { key: 'mr_favorites',    label: 'Scanner Favorites'},
   { key: 'ro_tickers',      label: 'Rhythm Observe'   },
   { key: 'mr_risk_profile', label: 'Risk Profile'     },
+  { key: 'tiingo_api_key',  label: 'Tiingo API Key'  },
 ];
 
 function exportWatchtowerData() {
@@ -2642,6 +2686,7 @@ function importWatchtowerData(input) {
       });
       // Reload in-memory state and re-render
       trades      = JSON.parse(localStorage.getItem('mr_trades')    || '[]');
+      TIINGO_KEY  = localStorage.getItem('tiingo_api_key') || '';
       targets     = JSON.parse(localStorage.getItem('mr_targets')   || '[]');
       thesisData  = JSON.parse(localStorage.getItem('mr_thesis')    || '{}');
       favorites   = JSON.parse(localStorage.getItem('mr_favorites') || '[]');
