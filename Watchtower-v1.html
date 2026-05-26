@@ -1370,16 +1370,37 @@ async function finnhubProfile(symbol) {
 async function refreshPortfolio() {
   const btn = document.getElementById('refresh-btn');
   btn.disabled = true; btn.innerHTML = '<span class="spin">⟳</span> LOADING';
-  const results = await Promise.allSettled([
+
+  // Fetch quotes in parallel (fast, no candle dependency)
+  const quoteResults = await Promise.allSettled([
     ...PORTFOLIO_ASSETS.map(a => finnhubQuote(a.ticker)),
-    ...PORTFOLIO_ASSETS.map(a => finnhubCandles(a.ticker, 30)),
     finnhubQuote('BINANCE:BTCUSDT'),
   ]);
   const n = PORTFOLIO_ASSETS.length;
   PORTFOLIO_ASSETS.forEach((a,i) => {
-    if (results[i].status==='fulfilled'&&results[i].value) quoteData[a.ticker]=results[i].value;
-    if (results[i+n].status==='fulfilled'&&results[i+n].value) candleData[a.ticker]=results[i+n].value;
+    if (quoteResults[i].status==='fulfilled' && quoteResults[i].value) {
+      quoteData[a.ticker] = quoteResults[i].value;
+    }
   });
+
+  // Fetch candles sequentially with stagger to avoid rate limit collisions
+  for (let i = 0; i < PORTFOLIO_ASSETS.length; i++) {
+    const a = PORTFOLIO_ASSETS[i];
+    try {
+      if (i > 0) await new Promise(r => setTimeout(r, 300));
+      const candles = await finnhubCandles(a.ticker, 30);
+      if (candles) {
+        candleData[a.ticker] = candles;
+        console.log('Candles OK:', a.ticker, candles.closes.length, 'days');
+      } else {
+        console.warn('Candles empty:', a.ticker);
+      }
+    } catch(e) {
+      console.warn('Candles failed:', a.ticker, e.message);
+    }
+  }
+
+  const results = quoteResults; // keep reference for BTC result below
   // Splits check + dynamic ticker fetch for watchlist
   watchlist.forEach(function(ticker){
     finnhubSplits(ticker).then(function(sp){renderSplitWarning(ticker,sp);});
@@ -1405,7 +1426,7 @@ async function refreshPortfolio() {
       });
     }
   });
-  btcQuote = results[n*2].status==='fulfilled' ? results[n*2].value : null;
+  btcQuote = quoteResults[n].status==='fulfilled' ? quoteResults[n].value : null;
   updateMacroBTC();
   PORTFOLIO_ASSETS.forEach(a => updateCard(a));
   document.getElementById('last-update').textContent = 'Updated '+new Date().toLocaleTimeString();
