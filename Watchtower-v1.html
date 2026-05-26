@@ -671,7 +671,7 @@ body::before {
     <div class="section-wrap">
       <div class="panel">
         <div class="section-label">Macro Environment</div>
-        <div style="font-size:10px;color:var(--text3);font-style:italic;margin-bottom:10px">The macro panel provides context, not signals.</div>
+        <div style="font-size:10px;color:var(--text3);font-style:italic;margin-bottom:10px">The macro panel provides context, not predictions.</div>
         <div class="macro-grid" id="macro-grid"></div>
       </div>
     </div>
@@ -1116,6 +1116,7 @@ function renderSilverSpotPanel(containerId, loadError) {
           <div class="silver-spot-change ${upDown}" style="color:${changeColor}">${arrow} ${Math.abs(changePct).toFixed(2)}%</div>
         </div>
         <div class="silver-spot-note">${note}</div>
+        <div style="font-size:10px;color:var(--text3);font-style:italic;margin-top:5px;line-height:1.55;border-top:1px solid var(--border);padding-top:5px">Why this matters: Silver weakness combined with a post-ex-div recovery window creates competing pressure on KSLV price. When the macro and the cycle align, the setup is cleaner. When they conflict, patience is more important.</div>
       </div>
     </div>`;
 }
@@ -1208,7 +1209,7 @@ async function finnhubCandles(symbol, days=365) {
   const from = to - days*86400;
   const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&period1=${from}&period2=${to}&range=1y`;
   try {
-    const result = await fetchYahooViaCorsProxy(yahooUrl, 8000);
+    const result = await fetchYahooViaCorsProxy(yahooUrl, 5000);
     if (!result || !result.timestamp?.length) throw new Error('no result from any proxy');
     const closes = result.indicators?.quote?.[0]?.close;
     const timestamps = result.timestamp;
@@ -1228,11 +1229,11 @@ async function finnhubCandles(symbol, days=365) {
     });
     return { closes:validCloses, timestamps:validTs, map };
   } catch(e) {
-    console.log('Yahoo candle fetch failed:', e.message);
-    // Fallback to Finnhub candles
+    console.log('Yahoo candle fetch failed, trying Finnhub direct:', e.message);
+    // Fallback to Finnhub candles direct (no CORS proxy needed)
     try {
       const fbUrl = `https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(symbol)}&resolution=D&from=${from}&to=${to}&token=${API_KEY}`;
-      const r2 = await fetch(fbUrl);
+      const r2 = await fetchWithTimeout(fbUrl, 6000);
       const d2 = await r2.json();
       if (d2.s !== 'ok' || !d2.t?.length) return null;
       const map = {};
@@ -1248,7 +1249,7 @@ async function finnhubDividends(symbol) {
     const toTs = Math.floor(Date.now()/1000);
     const fromTs = toTs - 730*86400;
     const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&period1=${fromTs}&period2=${toTs}&events=div`;
-    const divResult = await fetchYahooViaCorsProxy(yahooUrl, 8000);
+    const divResult = await fetchYahooViaCorsProxy(yahooUrl, 5000);
     const events = divResult?.events?.dividends;
     if (events && Object.keys(events).length > 0) {
       const dates = Object.values(events)
@@ -1342,7 +1343,7 @@ async function fetchSRCandles(ticker) {
     var to = Math.floor(Date.now()/1000);
     var from = to - 90*86400;
     var yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1d&period1=' + from + '&period2=' + to;
-    var srResult = await fetchYahooViaCorsProxy(yahooUrl, 8000);
+    var srResult = await fetchYahooViaCorsProxy(yahooUrl, 5000);
     if (!srResult) return;
     var closes = srResult.indicators && srResult.indicators.quote && srResult.indicators.quote[0] && srResult.indicators.quote[0].close;
     if (!closes || closes.length < 20) return;
@@ -1730,8 +1731,8 @@ function entryExitSignal(cycles, naturalCycles, hasDivs, divDates) {
   // Check dividend window first
   if (hasDivs && divDates.length) {
     const status = currentWindowStatus(divDates);
-    if (status.type==='post-div' && status.days <= 3) return { type:'entry', icon:'⚡', label:'POTENTIAL ENTRY WINDOW', desc:`${status.days} day${status.days!==1?'s':''} after ex-dividend. Historical post-div sellers may be flushing out — watch for a floor forming.` };
-    if (status.type==='pre-div' && status.days <= 4) return { type:'watch', icon:'⚠', label:'PRE-DIVIDEND WINDOW', desc:`${status.days} day${status.days!==1?'s':''} before ex-date. Pre-div runup may be in progress. Exit before ex-date or hold for dividend — not both.` };
+    if (status.type==='post-div' && status.days <= 3) return { type:'entry', icon:'⚡', label:'POTENTIAL ENTRY CONDITION', desc:`${status.days} day${status.days!==1?'s':''} after ex-dividend. Historical post-div sellers may be flushing out — watch for a floor forming.` };
+    if (status.type==='pre-div' && status.days <= 4) return { type:'watch', icon:'⚠', label:'PRE-DIVIDEND ZONE', desc:`${status.days} day${status.days!==1?'s':''} before ex-date. Pre-div runup may be in progress. Exit before ex-date or hold for dividend — not both.` };
     if (status.type==='post-div') return { type:'watch', icon:'◉', label:'POST-DIV DRIFT ZONE', desc:`${status.days} days after ex-date. Price may still be settling. Wait for stabilization before new entry.` };
   }
   // Natural cycle signal
@@ -1739,12 +1740,12 @@ function entryExitSignal(cycles, naturalCycles, hasDivs, divDates) {
     const { avgCycleDays, daysSinceLastTrough, daysSinceLastPeak, consistency } = naturalCycles;
     if (consistency > 0.5) {
       const cycleProgress = (daysSinceLastTrough % avgCycleDays) / avgCycleDays;
-      if (cycleProgress < 0.25) return { type:'entry', icon:'⚡', label:'HISTORICAL RHYTHM ZONE — EARLY PHASE', desc:`Price is historically in the early phase of a ~${avgCycleDays}-day natural cycle. Historical troughs have been followed by an avg gain of ${fmt(naturalCycles.avgGain)}%.` };
+      if (cycleProgress < 0.25) return { type:'entry', icon:'⚡', label:'HISTORICAL RHYTHM — EARLY PHASE OBSERVED', desc:`Price is historically in the early phase of a ~${avgCycleDays}-day natural cycle. Historical troughs have been followed by an avg gain of ${fmt(naturalCycles.avgGain)}%.` };
       if (cycleProgress > 0.65 && cycleProgress < 0.85) return { type:'exit', icon:'⚠', label:'ELEVATED CAUTION CONDITIONS', desc:`Cycle suggests price may be approaching a peak zone in the ~${avgCycleDays}-day rhythm. Historical context suggests reviewing exit criteria and position sizing.` };
       if (cycleProgress >= 0.85) return { type:'watch', icon:'◉', label:'LATE CYCLE — REVIEW CONDITIONS', desc:`Near the top of the estimated cycle. Risk/reward may be unfavorable for new entries here.` };
     }
   }
-  return { type:'neutral', icon:'◉', label:'NO STRONG CONTEXTUAL ALIGNMENT', desc:'No strong contextual alignment detected at this time. Historical conditions do not show a clearly defined observation zone. Continue monitoring.' };
+  return { type:'neutral', icon:'◉', label:'NO CLEAR CONTEXTUAL ALIGNMENT', desc:'Historical conditions do not show a clearly defined rhythm zone at this time. No strong contextual alignment observed. Continue monitoring.' };
 }
 
 function renderScanResult(ticker, { quote, candles, divs, cycles, naturalCycles, name }) {
@@ -1858,7 +1859,8 @@ function renderScanResult(ticker, { quote, candles, divs, cycles, naturalCycles,
   // Insight
   html += `<div class="rhythm-insight">
     <div class="rhythm-insight-label">Pattern Intelligence — ${ticker}</div>
-    <p>${score>=70?`<span class="insight-hl" style="color:var(--green)">Strong rhythm detected.</span> This ticker shows consistent, repeatable price cycles that may be usable for timing entries and exits.`:score>=40?`<span class="insight-hl" style="color:var(--amber)">Moderate rhythm detected.</span> Some consistency in price cycles, but macro events can override the pattern. Use in combination with other signals.`:`<span class="insight-hl" style="color:var(--red)">Weak rhythm.</span> Price behavior appears irregular or driven more by external events than internal cycles. Difficult to time reliably.`}</p>
+    <p>${score>=70?`<span class="insight-hl" style="color:var(--green)">Strong rhythm detected.</span> This ticker shows consistent, repeatable price cycles that may be usable for timing entries and exits.`:score>=40?`<span class="insight-hl" style="color:var(--amber)">Moderate rhythm detected.</span> Some consistency in price cycles, but macro events can override the pattern. Use in combination with other observations.`:`<span class="insight-hl" style="color:var(--red)">Weak rhythm.</span> Price behavior appears irregular or driven more by external events than internal cycles. Difficult to time reliably.`}</p>
+    <p style="font-size:10px;color:var(--text3);font-style:italic;border-top:1px solid var(--border);padding-top:8px;margin-top:4px">Why this matters: Securities with observable, repeatable cycles are generally easier to plan around than those driven by unpredictable news events. A higher wave score means historical behavior has been more structured — not that it will repeat. Lower scores are a signal to increase your margin of patience, not your position size.</p>
     ${naturalCycles&&naturalCycles.avgGain?`<p>Historical observations show trough-to-peak movement averaging <span class="insight-hl" style="color:var(--green)">+${fmt(naturalCycles.avgGain)}%</span> over a ~${naturalCycles.avgCycleDays}-day cycle. Riding full waves rather than capturing dividends may offer better returns.</p>`:''}
   </div>
   </div>`;
@@ -2478,7 +2480,7 @@ function renderCycleAnalysis() {
         + '<div class="cycle-stat-item"><div class="cycle-stat-label">Entry Date</div><div class="cycle-stat-val" style="font-size:11px">' + pendingBuy.date + '</div></div>'
         + '<div class="cycle-stat-item"><div class="cycle-stat-label">Current</div><div class="cycle-stat-val">' + (currentPrice ? fmtUSD(currentPrice) : '—') + '</div></div>'
         + '</div>'
-        + '<div class="timing-feedback info">⟳ Position open — exit not yet logged. Watching for cycle peak signal before selling.</div>'
+        + '<div class="timing-feedback info">⟳ Position open — exit not yet logged. Watching for cycle peak condition before selling.</div>'
         + (pendingBuy.notes ? '<div class="trade-notes" style="margin-top:8px">"' + pendingBuy.notes + '"</div>' : '')
         + '</div>';
     }
@@ -3135,7 +3137,7 @@ function renderInvalidationAlert(ticker, currentPrice) {
     } else {
       alertClass = 'safe';
       label = 'Invalidation: ' + fmtUSD(invalidation);
-      body = fmt(pctAway) + '% above your invalidation point. Thesis intact.';
+      body = fmt(pctAway) + '% above your invalidation point. Thesis intact. Why this matters: your invalidation point is the pre-defined condition under which your original reasoning no longer holds. It exists so price movement alone does not make your decision — your plan does.';
     }
 
     el.className = 'invalidation-alert ' + alertClass;
