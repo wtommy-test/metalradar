@@ -1138,9 +1138,9 @@ async function fetchYahooViaCorsProxy(yahooUrl, timeoutMs) {
 }
 
 async function fetchSilverSpot() {
-  // ── TIER 1: Finnhub live quote — instant, no rate limit, always available ──
+  // ── TIER 1: Finnhub live quote — plain fetch, same as finnhubQuote ──
   try {
-    const r1 = await fetchWithTimeout(`https://finnhub.io/api/v1/quote?symbol=SLV&token=${API_KEY}`, 6000);
+    const r1 = await fetch(`https://finnhub.io/api/v1/quote?symbol=SLV&token=${API_KEY}`);
     const d1 = await r1.json();
     if (d1.c && d1.c > 0) {
       console.log('Silver via Finnhub OK:', d1.c);
@@ -1159,7 +1159,7 @@ async function fetchSilverSpot() {
       const startD = new Date(today); startD.setDate(startD.getDate() - 7);
       const startDate = startD.toISOString().slice(0,10);
       const tiingoUrl = `https://api.tiingo.com/tiingo/daily/SLV/prices?startDate=${startDate}&endDate=${endDate}&token=${TIINGO_KEY}`;
-      const r = await fetchWithTimeout(tiingoUrl, 8000);
+      const r = await fetch(tiingoUrl);
       if (r.ok) {
         const d = await r.json();
         if (Array.isArray(d) && d.length >= 2) {
@@ -1341,7 +1341,7 @@ async function finnhubCandles(symbol, days=365) {
       const endDate   = new Date((to)*1000).toISOString().slice(0,10);
       const tiingoUrl = `https://api.tiingo.com/tiingo/daily/${encodeURIComponent(symbol)}/prices?startDate=${startDate}&endDate=${endDate}&token=${TIINGO_KEY}`;
       console.log('Tiingo fetch:', symbol, tiingoUrl);
-      const r = await fetchWithTimeout(tiingoUrl, 10000);
+      const r = await fetch(tiingoUrl);
       console.log('Tiingo response:', symbol, r.status, r.ok);
       if (r.ok) {
         const d = await r.json();
@@ -1399,7 +1399,7 @@ async function finnhubCandles(symbol, days=365) {
   // ── TIER 3: Finnhub direct (free tier may restrict, but worth trying) ──
   try {
     const fbUrl = `https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(symbol)}&resolution=D&from=${from}&to=${to}&token=${API_KEY}`;
-    const r2 = await fetchWithTimeout(fbUrl, 6000);
+    const r2 = await fetch(fbUrl);
     const d2 = await r2.json();
     if (d2.s !== 'ok' || !d2.t?.length) return null;
     const map = {};
