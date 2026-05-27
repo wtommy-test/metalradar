@@ -663,7 +663,8 @@ body::before {
 
       <div class="settings-status" id="settings-status"></div>
       <button class="settings-save-btn" onclick="saveSettings()">SAVE KEYS</button>
-      <button class="settings-cancel-btn" onclick="closeSettings()">CANCEL</button>
+      <button class="settings-cancel-btn" onclick="clearCacheAndRefresh()">FORCE FULL REFRESH</button>
+      <button class="settings-cancel-btn" onclick="closeSettings()" style="margin-top:6px">CANCEL</button>
     </div>
   </div>
 
@@ -993,6 +994,9 @@ body::before {
 let API_KEY = localStorage.getItem('finnhub_api_key') || '';
 let TIINGO_KEY = localStorage.getItem('tiingo_api_key') || '';
 let quoteData = {}, candleData = {}, btcQuote = null;
+let candleTimestamps = {}; // tracks when each ticker's candles were last fetched
+let silverTimestamp = 0;   // tracks when SLV was last fetched
+const CANDLE_CACHE_MS = 30 * 60 * 1000; // 30 minutes
 let rhythmCache = {}, rhythmTicker = 'KSLV';
 let scanCache = {};
 let cryptoExpand = null;
@@ -1113,8 +1117,10 @@ async function fetchSilverSpot() {
   if (TIINGO_KEY) {
     try {
       const today = new Date();
-      const endDate = today.toISOString().slice(0,10);
-      const startD = new Date(today); startD.setDate(startD.getDate() - 5);
+      // Use yesterday as endDate — Tiingo may not have today's close until EOD
+      const endD = new Date(today); endD.setDate(endD.getDate() - 1);
+      const endDate = endD.toISOString().slice(0,10);
+      const startD = new Date(today); startD.setDate(startD.getDate() - 7);
       const startDate = startD.toISOString().slice(0,10);
       const tiingoUrl = `https://api.tiingo.com/tiingo/daily/SLV/prices?startDate=${startDate}&endDate=${endDate}&token=${TIINGO_KEY}`;
       const r = await fetchWithTimeout(tiingoUrl, 8000);
@@ -1173,7 +1179,7 @@ function renderSilverSpotPanel(containerId, loadError) {
   if (!el) return;
   if (!silverSpotData) {
     const msg = loadError
-      ? 'Unavailable — proxy timeout. Check corsproxy.io status or refresh.'
+      ? 'Unavailable — data source timeout. Refresh to retry.'
       : 'Loading…';
     const msgColor = loadError ? 'var(--amber)' : 'var(--text3)';
     el.innerHTML = `<div class="silver-spot-panel"><div class="silver-spot-icon">⬡</div><div class="silver-spot-detail"><div class="silver-spot-label">Silver Proxy (SLV)</div><div class="silver-spot-price" style="color:${msgColor}">${msg}</div></div></div>`;
@@ -1428,22 +1434,31 @@ async function refreshPortfolio() {
     }
   });
 
-  // Fetch candles sequentially with stagger — update each card as soon as its data arrives
+  // Fetch candles sequentially with stagger — skip if cache is still fresh (30 min)
+  const now = Date.now();
   for (let i = 0; i < PORTFOLIO_ASSETS.length; i++) {
     const a = PORTFOLIO_ASSETS[i];
+    const cacheAge = now - (candleTimestamps[a.ticker] || 0);
+    if (candleData[a.ticker] && cacheAge < CANDLE_CACHE_MS) {
+      console.log('Candles cached:', a.ticker, Math.round(cacheAge/60000) + 'min old — skipping fetch');
+      updateCard(a); // still re-render with cached data
+      continue;
+    }
     try {
       if (i > 0) await new Promise(r => setTimeout(r, 400));
       const candles = await finnhubCandles(a.ticker, 30);
       if (candles) {
         candleData[a.ticker] = candles;
-        console.log('Candles OK:', a.ticker, candles.closes.length, 'days');
-        // Update this card immediately so chart renders as data arrives
+        candleTimestamps[a.ticker] = Date.now();
+        console.log('Candles fetched:', a.ticker, candles.closes.length, 'days');
         updateCard(a);
       } else {
         console.warn('Candles empty:', a.ticker);
+        if (candleData[a.ticker]) updateCard(a); // use stale cache if available
       }
     } catch(e) {
       console.warn('Candles failed:', a.ticker, e.message);
+      if (candleData[a.ticker]) updateCard(a); // use stale cache if available
     }
   }
 
@@ -1480,10 +1495,20 @@ async function refreshPortfolio() {
   btn.disabled=false; btn.innerHTML='⟳ REFRESH';
   checkTargetsOnRefresh();
   // Priority 4 — Fetch silver spot in background after portfolio loads
-  fetchSilverSpot().then(function(spot) {
-    silverSpotData = spot;
-    renderSilverSpotPanel('silver-spot-KSLV', spot === null);
-  });
+  // Only re-fetch silver if cache is stale or empty
+  const silverAge = Date.now() - silverTimestamp;
+  if (silverSpotData && silverAge < CANDLE_CACHE_MS) {
+    console.log('Silver cached:', Math.round(silverAge/60000) + 'min old — skipping fetch');
+    renderSilverSpotPanel('silver-spot-KSLV', false);
+  } else {
+    fetchSilverSpot().then(function(spot) {
+      if (spot) {
+        silverSpotData = spot;
+        silverTimestamp = Date.now();
+      }
+      renderSilverSpotPanel('silver-spot-KSLV', spot === null);
+    });
+  }
   // Fetch 90-day candles for SR on all watchlist tickers
   setTimeout(function() {
     watchlist.forEach(function(ticker) {
@@ -1492,9 +1517,18 @@ async function refreshPortfolio() {
   }, 1500); // slight delay so portfolio loads first
 }
 
+let srCandleTimestamps = {}; // cache SR candle fetch times
+
 async function fetchSRCandles(ticker) {
+  // Skip if SR candles were fetched within the last 30 minutes
+  const srAge = Date.now() - (srCandleTimestamps[ticker] || 0);
+  if (srCache[ticker] && srAge < CANDLE_CACHE_MS) {
+    console.log('SR cached:', ticker, Math.round(srAge/60000) + 'min — skipping');
+    return;
+  }
   // Fetch 90 days via Yahoo for SR calculation
   try {
+    srCandleTimestamps[ticker] = Date.now();
     var to = Math.floor(Date.now()/1000);
     var from = to - 90*86400;
     var yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1d&period1=' + from + '&period2=' + to;
@@ -2097,6 +2131,10 @@ function saveSettings() {
   }
 
   if (saved.length) {
+    // Clear all caches when keys change so fresh data loads immediately
+    candleTimestamps = {};
+    silverTimestamp = 0;
+    srCandleTimestamps = {};
     st.className = 'settings-status ok';
     st.textContent = '✓ Saved: ' + saved.join(', ') + '. Refreshing data…';
     st.style.display = 'block';
@@ -2110,6 +2148,16 @@ function saveSettings() {
     st.style.display = 'block';
     setTimeout(closeSettings, 1200);
   }
+}
+
+function clearCacheAndRefresh() {
+  candleTimestamps = {};
+  silverTimestamp = 0;
+  srCandleTimestamps = {};
+  candleData = {};
+  silverSpotData = null;
+  closeSettings();
+  refreshPortfolio();
 }
 
 // ════════════════════════════════════════════════════════
