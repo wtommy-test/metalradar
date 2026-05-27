@@ -993,10 +993,33 @@ body::before {
 // ════════════════════════════════════════════════════════
 let API_KEY = localStorage.getItem('finnhub_api_key') || '';
 let TIINGO_KEY = localStorage.getItem('tiingo_api_key') || '';
-let quoteData = {}, candleData = {}, btcQuote = null;
-let candleTimestamps = {}; // tracks when each ticker's candles were last fetched
-let silverTimestamp = 0;   // tracks when SLV was last fetched
+let quoteData = {}, btcQuote = null;
 const CANDLE_CACHE_MS = 30 * 60 * 1000; // 30 minutes
+
+// Persistent candle cache — survives browser close/reopen
+function loadCandleCache() {
+  try {
+    const stored = localStorage.getItem('wt_candle_cache');
+    return stored ? JSON.parse(stored) : { data:{}, timestamps:{}, silver:null, silverTs:0 };
+  } catch(e) { return { data:{}, timestamps:{}, silver:null, silverTs:0 }; }
+}
+function saveCandleCache() {
+  try {
+    localStorage.setItem('wt_candle_cache', JSON.stringify({
+      data: candleData,
+      timestamps: candleTimestamps,
+      silver: silverSpotData,
+      silverTs: silverTimestamp
+    }));
+  } catch(e) { console.log('Cache save failed:', e.message); }
+}
+
+const _cc = loadCandleCache();
+let candleData      = _cc.data       || {};
+let candleTimestamps= _cc.timestamps || {};
+let silverSpotData  = _cc.silver     || null;
+let silverTimestamp = _cc.silverTs   || 0;
+let srCandleTimestamps = {};
 let rhythmCache = {}, rhythmTicker = 'KSLV';
 let scanCache = {};
 let cryptoExpand = null;
@@ -1081,7 +1104,6 @@ function renderExDivCounter(ticker, exDivDateStr, containerId) {
 // ════════════════════════════════════════════════════════
 // SILVER SPOT PRICE (Priority 4)
 // ════════════════════════════════════════════════════════
-let silverSpotData = null;
 
 // Fetch with timeout helper — rejects after ms milliseconds
 function fetchWithTimeout(url, ms) {
@@ -1450,6 +1472,7 @@ async function refreshPortfolio() {
       if (candles) {
         candleData[a.ticker] = candles;
         candleTimestamps[a.ticker] = Date.now();
+        saveCandleCache();
         console.log('Candles fetched:', a.ticker, candles.closes.length, 'days');
         updateCard(a);
       } else {
@@ -1505,6 +1528,7 @@ async function refreshPortfolio() {
       if (spot) {
         silverSpotData = spot;
         silverTimestamp = Date.now();
+        saveCandleCache();
       }
       renderSilverSpotPanel('silver-spot-KSLV', spot === null);
     });
@@ -1516,8 +1540,6 @@ async function refreshPortfolio() {
     });
   }, 1500); // slight delay so portfolio loads first
 }
-
-let srCandleTimestamps = {}; // cache SR candle fetch times
 
 async function fetchSRCandles(ticker) {
   // Skip if SR candles were fetched within the last 30 minutes
@@ -2156,6 +2178,7 @@ function clearCacheAndRefresh() {
   srCandleTimestamps = {};
   candleData = {};
   silverSpotData = null;
+  localStorage.removeItem('wt_candle_cache');
   closeSettings();
   refreshPortfolio();
 }
