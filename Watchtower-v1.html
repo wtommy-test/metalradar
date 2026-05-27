@@ -239,6 +239,12 @@ body::before {
 .trade-note-add-btn { background:transparent; border:1px solid var(--border2); color:var(--text3); font-family:var(--mono); font-size:9px; letter-spacing:0.1em; padding:8px 10px; border-radius:4px; cursor:pointer; white-space:nowrap; transition:all 0.2s; align-self:flex-end; }
 .trade-note-add-btn:hover { border-color:var(--gold); color:var(--gold); }
 .trade-note-empty { font-size:11px; color:var(--text3); font-style:italic; }
+.cycle-snapshot-btn { background:transparent; border:1px solid var(--border); color:var(--text3); font-family:var(--mono); font-size:8px; letter-spacing:0.12em; padding:5px 10px; border-radius:3px; cursor:pointer; transition:all 0.2s; margin-bottom:8px; }
+.cycle-snapshot-btn:hover { border-color:var(--gold); color:var(--gold); }
+.cycle-snapshot-entry { background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.2); border-radius:4px; padding:7px 10px; margin-bottom:6px; }
+.cycle-snapshot-ts { font-family:var(--mono); font-size:8px; color:var(--text3); letter-spacing:0.06em; margin-bottom:2px; }
+.cycle-snapshot-data { font-family:var(--mono); font-size:12px; color:var(--gold); }
+.cycle-snapshot-sub { font-size:9px; color:var(--text3); font-style:italic; margin-top:2px; }
 .ro-error { font-family:var(--mono); font-size:10px; color:var(--text3); font-style:italic; }
 .fav-add-hint { font-size:11px; color:var(--text3); font-style:italic; }
 
@@ -1272,21 +1278,31 @@ async function finnhubCandles(symbol, days=365) {
       const startDate = new Date((from)*1000).toISOString().slice(0,10);
       const endDate   = new Date((to)*1000).toISOString().slice(0,10);
       const tiingoUrl = `https://api.tiingo.com/tiingo/daily/${encodeURIComponent(symbol)}/prices?startDate=${startDate}&endDate=${endDate}&token=${TIINGO_KEY}`;
-      const r = await fetchWithTimeout(tiingoUrl, 8000);
+      console.log('Tiingo fetch:', symbol, tiingoUrl);
+      const r = await fetchWithTimeout(tiingoUrl, 10000);
+      console.log('Tiingo response:', symbol, r.status, r.ok);
       if (r.ok) {
         const d = await r.json();
-        if (Array.isArray(d) && d.length >= 10) {
-          const validRows = d.filter(row => row.close !== null && !isNaN(row.close));
-          if (validRows.length >= 10) {
+        console.log('Tiingo data:', symbol, Array.isArray(d) ? d.length + ' rows' : typeof d, d && d[0] ? d[0] : '');
+        if (Array.isArray(d) && d.length >= 5) {
+          const validRows = d.filter(row => row.close !== null && row.close !== undefined && !isNaN(row.close));
+          console.log('Tiingo valid rows:', symbol, validRows.length);
+          if (validRows.length >= 5) {
             const closes = validRows.map(row => row.close);
             const timestamps = validRows.map(row => Math.floor(new Date(row.date).getTime()/1000));
             const map = {};
             validRows.forEach(row => {
-              map[row.date.slice(0,10)] = row.close;
+              // Handle both "2026-05-01T00:00:00.000Z" and "2026-05-01" formats
+              const dateKey = row.date.slice(0,10);
+              map[dateKey] = row.close;
             });
+            console.log('Tiingo SUCCESS:', symbol, closes.length, 'closes, map keys:', Object.keys(map).length);
             return { closes, timestamps, map };
           }
         }
+      } else {
+        const errText = await r.text().catch(() => 'unknown');
+        console.warn('Tiingo non-OK:', symbol, r.status, errText.slice(0,200));
       }
     } catch(e) {
       console.log('Tiingo candle fetch failed, trying Yahoo proxy:', e.message);
@@ -1383,15 +1399,17 @@ async function refreshPortfolio() {
     }
   });
 
-  // Fetch candles sequentially with stagger to avoid rate limit collisions
+  // Fetch candles sequentially with stagger — update each card as soon as its data arrives
   for (let i = 0; i < PORTFOLIO_ASSETS.length; i++) {
     const a = PORTFOLIO_ASSETS[i];
     try {
-      if (i > 0) await new Promise(r => setTimeout(r, 300));
+      if (i > 0) await new Promise(r => setTimeout(r, 400));
       const candles = await finnhubCandles(a.ticker, 30);
       if (candles) {
         candleData[a.ticker] = candles;
         console.log('Candles OK:', a.ticker, candles.closes.length, 'days');
+        // Update this card immediately so chart renders as data arrives
+        updateCard(a);
       } else {
         console.warn('Candles empty:', a.ticker);
       }
@@ -3463,9 +3481,23 @@ function renderPatienceTracker() {
         + (thesis.snapshot ? '<div class="snapshot-wrap"><div class="thesis-label" style="margin-bottom:4px">Entry Chart Snapshot</div><img src="' + thesis.snapshot + '" class="snapshot-img" /></div>' : '')
 
         // Trade Notes Log
-        + '<div class="trade-notes-log">'        + '<div class="trade-notes-log-label">Trade Notes Log</div>'        + (function() {
+        + '<div class="trade-notes-log">'        + '<div class="trade-notes-log-label">Trade Notes Log</div>'
+        // Cycle snapshots section
+        + (function() {
+            var snaps = thesis.cycleSnapshots || [];
+            if (!snaps.length) return '';
+            return snaps.map(function(s) {
+              return '<div class="cycle-snapshot-entry">'
+                + '<div class="cycle-snapshot-ts">' + s.ts + '</div>'
+                + '<div class="cycle-snapshot-data">&#9654; ' + s.price + ' &nbsp;|&nbsp; ' + s.cycleDay + '</div>'
+                + (s.note ? '<div class="cycle-snapshot-sub">' + s.note.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' : '')
+                + '</div>';
+            }).join('');
+          })()
+        + '<button class="cycle-snapshot-btn" onclick="logCycleSnapshot(\'' + key + '\',\'' + ticker + '\')">&#9654; LOG CYCLE SNAPSHOT — Day ' + daysSince + '</button>'
+        + (function() {
             var notes = thesis.tradeNotes || [];
-            if (!notes.length) return '<div class="trade-note-empty">No notes yet. Add your first observation below.</div>';
+            if (!notes.length) return '<div class="trade-note-empty">No written notes yet.</div>';
             return notes.map(function(n) {
               return '<div class="trade-note-entry">'                + '<div class="trade-note-ts">' + n.ts + '</div>'                + '<div class="trade-note-text">' + n.text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>'                + '</div>';
             }).join('');
@@ -3485,6 +3517,61 @@ function renderPatienceTracker() {
       if (price) renderInvalidationAlert(ticker, price);
     });
   }, 100);
+}
+
+
+function logCycleSnapshot(key, ticker) {
+  var thesis = thesisData[key] || {};
+  if (!thesis.cycleSnapshots) thesis.cycleSnapshots = [];
+
+  // Get current price from quoteData
+  var quote = quoteData[ticker];
+  if (!quote || !quote.price) {
+    alert('Price data not yet loaded for ' + ticker + '. Refresh and try again.');
+    return;
+  }
+
+  // Calculate cycle day from buy date (key contains ticker_buyDate)
+  var parts = key.split('_');
+  var buyDate = parts.slice(1).join('_');
+  var today = new Date(); today.setHours(12,0,0,0);
+  var buyD = new Date(buyDate); buyD.setHours(12,0,0,0);
+  var daysSince = Math.round((today - buyD) / 86400000);
+
+  // Build timestamp
+  var now = new Date();
+  var ts = now.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+    + ' ' + now.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true });
+
+  // Build cycle context note
+  var exDivAsset = null;
+  (PORTFOLIO_ASSETS || []).forEach(function(a) { if (a.ticker === ticker) exDivAsset = a; });
+  (watchlist || []).forEach(function(t) { if (t === ticker && !exDivAsset) exDivAsset = { ticker: t }; });
+
+  var cycleDay = 'Day ' + daysSince + ' in trade';
+
+  // Check if near ex-div
+  var contextNote = '';
+  if (exDivAsset && exDivAsset.lastExDiv) {
+    var lastEx = new Date(exDivAsset.lastExDiv); lastEx.setHours(12,0,0,0);
+    var daysPostEx = Math.round((today - lastEx) / 86400000);
+    if (daysPostEx >= 0 && daysPostEx <= 30) {
+      cycleDay += ' · Day +' + daysPostEx + ' post ex-div';
+    }
+  }
+
+  var snap = {
+    ts: ts,
+    price: '$' + quote.price.toFixed(2),
+    cycleDay: cycleDay,
+    change: (quote.changePct >= 0 ? '+' : '') + quote.changePct.toFixed(2) + '% today',
+    note: contextNote
+  };
+
+  thesis.cycleSnapshots.push(snap);
+  thesisData[key] = thesis;
+  localStorage.setItem('mr_thesis', JSON.stringify(thesisData));
+  renderPatienceTracker();
 }
 
 function addTradeNote(key) {
