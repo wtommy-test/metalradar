@@ -1109,12 +1109,40 @@ async function fetchYahooViaCorsProxy(yahooUrl, timeoutMs) {
 }
 
 async function fetchSilverSpot() {
-  // SLV tracks silver spot closely — use as proxy via Yahoo Finance
+  // ── TIER 1: Tiingo direct — no proxy needed ──
+  if (TIINGO_KEY) {
+    try {
+      const today = new Date();
+      const endDate = today.toISOString().slice(0,10);
+      const startD = new Date(today); startD.setDate(startD.getDate() - 5);
+      const startDate = startD.toISOString().slice(0,10);
+      const tiingoUrl = `https://api.tiingo.com/tiingo/daily/SLV/prices?startDate=${startDate}&endDate=${endDate}&token=${TIINGO_KEY}`;
+      const r = await fetchWithTimeout(tiingoUrl, 8000);
+      if (r.ok) {
+        const d = await r.json();
+        if (Array.isArray(d) && d.length >= 2) {
+          const valid = d.filter(row => row.close !== null && !isNaN(row.close));
+          if (valid.length >= 2) {
+            const price = valid[valid.length-1].close;
+            const prev  = valid[valid.length-2].close;
+            const change = price - prev;
+            const changePct = ((price - prev) / prev) * 100;
+            console.log('Silver via Tiingo OK:', price);
+            return { price, change, changePct, source:'SLV' };
+          }
+        }
+      }
+    } catch(e) {
+      console.log('fetchSilverSpot Tiingo failed:', e.message);
+    }
+  }
+
+  // ── TIER 2: Yahoo Finance via CORS proxy chain ──
   try {
     const to = Math.floor(Date.now()/1000);
-    const from = to - 2*86400;
+    const from = to - 5*86400;
     const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/SLV?interval=1d&period1=${from}&period2=${to}`;
-    const result = await fetchYahooViaCorsProxy(yahooUrl, 7000);
+    const result = await fetchYahooViaCorsProxy(yahooUrl, 5000);
     if (result) {
       const closes = result.indicators?.quote?.[0]?.close?.filter(c=>c!==null);
       if (closes && closes.length >= 2) {
@@ -1128,7 +1156,8 @@ async function fetchSilverSpot() {
   } catch(e) {
     console.log('fetchSilverSpot Yahoo path failed:', e.message);
   }
-  // Final fallback: Finnhub live quote for SLV (no CORS proxy needed)
+
+  // ── TIER 3: Finnhub live quote for SLV ──
   try {
     const r2 = await fetchWithTimeout(`https://finnhub.io/api/v1/quote?symbol=SLV&token=${API_KEY}`, 6000);
     const d2 = await r2.json();
