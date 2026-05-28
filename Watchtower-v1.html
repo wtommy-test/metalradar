@@ -997,7 +997,7 @@ body::before {
 let API_KEY = localStorage.getItem('finnhub_api_key') || '';
 let TIINGO_KEY = localStorage.getItem('tiingo_api_key') || '';
 let quoteData = {}, btcQuote = null;
-const CANDLE_CACHE_MS = 30 * 60 * 1000; // 30 minutes
+const CANDLE_CACHE_MS = 4 * 60 * 60 * 1000; // 4 hours — candles are daily data, no need to refresh frequently
 
 // Persistent candle cache — survives browser close/reopen
 function loadCandleCache() {
@@ -1471,6 +1471,8 @@ async function refreshPortfolio() {
       updateCard(a); // still re-render with cached data
       continue;
     }
+    // Render immediately with stale cache while fresh fetch is in progress
+    if (candleData[a.ticker]) updateCard(a);
     try {
       if (i > 0) await new Promise(r => setTimeout(r, 400));
       const candles = await finnhubCandles(a.ticker, 30);
@@ -1479,14 +1481,12 @@ async function refreshPortfolio() {
         candleTimestamps[a.ticker] = Date.now();
         saveCandleCache();
         console.log('Candles fetched:', a.ticker, candles.closes.length, 'days');
-        updateCard(a);
+        updateCard(a); // re-render with fresh data
       } else {
-        console.warn('Candles empty:', a.ticker);
-        if (candleData[a.ticker]) updateCard(a); // use stale cache if available
+        console.warn('Candles empty for', a.ticker, '— keeping stale cache if available');
       }
     } catch(e) {
-      console.warn('Candles failed:', a.ticker, e.message);
-      if (candleData[a.ticker]) updateCard(a); // use stale cache if available
+      console.warn('Candles failed:', a.ticker, e.message, '— keeping stale cache if available');
     }
   }
 
