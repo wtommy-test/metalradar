@@ -642,7 +642,7 @@ body::before {
     <div class="header-right">
       <div class="last-update" id="last-update"></div>
       <button class="icon-btn" onclick="openSettings()" style="font-size:13px;padding:5px 10px" title="Settings">⚙</button>
-      <button class="icon-btn" id="refresh-btn" onclick="refreshPortfolio()">⟳ REFRESH</button>
+      <button class="icon-btn" id="refresh-btn" onclick="clearCacheAndRefresh()">⟳ REFRESH</button>
     </div>
   </div>
 
@@ -2191,7 +2191,9 @@ function clearCacheAndRefresh() {
   candleData = {};
   silverSpotData = null;
   localStorage.removeItem('wt_candle_cache');
-  closeSettings();
+  // Close settings if open
+  var overlay = document.getElementById('settings-overlay');
+  if (overlay) overlay.classList.remove('open');
   refreshPortfolio();
 }
 
