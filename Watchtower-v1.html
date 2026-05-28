@@ -1209,7 +1209,14 @@ function renderSilverSpotPanel(containerId, loadError) {
       ? 'Unavailable — data source timeout. Refresh to retry.'
       : 'Loading…';
     const msgColor = loadError ? 'var(--amber)' : 'var(--text3)';
-    el.innerHTML = `<div class="silver-spot-panel"><div class="silver-spot-icon">⬡</div><div class="silver-spot-detail"><div class="silver-spot-label">Silver Proxy (SLV)</div><div class="silver-spot-price" style="color:${msgColor}">${msg}</div></div></div>`;
+    el.innerHTML = `<div class="silver-spot-panel">
+      <div class="silver-spot-icon">⬡</div>
+      <div class="silver-spot-detail">
+        <div class="silver-spot-label">Silver Proxy (SLV) — Macro Confirmation</div>
+        <div class="silver-spot-price" style="color:${msgColor}">${msg}</div>
+        ${loadError ? `<div style="font-size:10px;color:var(--text3);font-style:italic;margin-top:8px;line-height:1.55;border-top:1px solid var(--border);padding-top:6px">Why this matters: Silver price direction is a key macro confirmation layer for KSLV cycle trades. When silver is rising, post-ex-div recovery conditions are generally more favorable. When silver is falling, cycle recovery faces additional headwind regardless of the rhythm pattern. Check SLV on TradingView for current context while this panel is unavailable.</div>` : ''}
+      </div>
+    </div>`;
     return;
   }
   const { price, changePct, source } = silverSpotData;
