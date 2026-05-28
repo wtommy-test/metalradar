@@ -12,7 +12,7 @@
 :root {
   --bg: #080808; --surface: #0e0e0e; --surface2: #141414;
   --border: #1e1e1e; --border2: #2a2a2a;
-  --text: #e8e8e8; --text2: #888; --text3: #444;
+  --text: #e8e8e8; --text2: #aaa; --text3: #666;
   --gold: #D4AF37; --silver: #C0C0C0; --btc: #F7931A;
   --green: #4ade80; --red: #f87171; --amber: #fbbf24;
   --orange: #fb923c; --blue: #60a5fa;
@@ -3073,7 +3073,7 @@ function renderTargets() {
         if (current <= t.price) {
           alertClass = 'hit';
           alertTitle = '◉ CONDITIONS HISTORICALLY FAVORABLE FOR REVIEW — ' + t.ticker;
-          alertBody  = 'Current price ' + fmtUSD(current) + ' is at or below your entry target of ' + fmtUSD(t.price) + '. Cycle low zone — consider buying in if rhythm confirms.';
+          alertBody  = 'Current price ' + fmtUSD(current) + ' is at or below your entry target of ' + fmtUSD(t.price) + '. Cycle low zone — pause, compare against your written thesis, and decide independently.';
           alertColor = 'var(--blue)';
         } else if (absDiff <= 3) {
           alertClass = 'near';
