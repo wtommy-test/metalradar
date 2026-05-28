@@ -2902,7 +2902,16 @@ function exportWatchtowerData() {
     };
     WATCHTOWER_BACKUP_KEYS.forEach(function(item) {
       var val = localStorage.getItem(item.key);
-      backup.data[item.key] = val ? JSON.parse(val) : null;
+      if (val === null || val === undefined) {
+        backup.data[item.key] = null;
+      } else {
+        try {
+          backup.data[item.key] = JSON.parse(val);
+        } catch(e) {
+          // Store as plain string if not valid JSON (e.g. mr_risk_profile = 'cash')
+          backup.data[item.key] = val;
+        }
+      }
     });
 
     var json = JSON.stringify(backup, null, 2);
@@ -2945,7 +2954,9 @@ function importWatchtowerData(input) {
       var restored = [];
       WATCHTOWER_BACKUP_KEYS.forEach(function(item) {
         if (backup.data[item.key] !== undefined && backup.data[item.key] !== null) {
-          localStorage.setItem(item.key, JSON.stringify(backup.data[item.key]));
+          var val = backup.data[item.key];
+          // Store plain strings directly, everything else as JSON
+          localStorage.setItem(item.key, typeof val === 'string' && item.key === 'mr_risk_profile' ? val : JSON.stringify(val));
           restored.push(item.label);
         }
       });
@@ -3424,7 +3435,6 @@ function updateJournalForm() {
 // PRIORITY 2 — INVALIDATION LIVE ALERT
 // ════════════════════════════════════════════════════════
 function renderInvalidationAlert(ticker, currentPrice) {
-  // Find all open positions for this ticker with a saved thesis
   var keys = Object.keys(thesisData).filter(function(k) { return k.startsWith(ticker + '_'); });
   keys.forEach(function(key) {
     var thesis = thesisData[key];
@@ -3433,21 +3443,49 @@ function renderInvalidationAlert(ticker, currentPrice) {
     var el = document.getElementById('invalidation-alert-' + key);
     if (!el) return;
 
-    var pctAway = ((currentPrice - invalidation) / invalidation) * 100;
+    // Calculate dividends received for this position since entry
+    var keyDate = key.substring(ticker.length + 1);
+    var sharesHeld = 0;
+    var divReceived = 0;
+    if (openPositions[ticker]) {
+      openPositions[ticker].forEach(function(bt) {
+        if (bt.date === keyDate) sharesHeld = bt.shares || 0;
+      });
+    }
+    if (sharesHeld > 0) {
+      trades.forEach(function(t) {
+        if (t.ticker === ticker && t.action === 'dividend' && t.date >= keyDate) {
+          var ds = t.shares || sharesHeld;
+          divReceived += ds > 0 ? (parseFloat(t.price) / ds) : 0;
+        }
+      });
+    }
+
+    // Effective price = current price + dividends received (reduces real loss)
+    var effectivePrice = currentPrice + divReceived;
+    var pctAway = ((effectivePrice - invalidation) / invalidation) * 100;
+    var pctAwayRaw = ((currentPrice - invalidation) / invalidation) * 100;
+    var divNote = divReceived > 0 ? ' (incl. ' + fmtUSD(divReceived) + '/share dividend received)' : '';
     var alertClass, label, body;
 
     if (currentPrice <= invalidation) {
-      alertClass = 'danger';
-      label = '⛔ INVALIDATION LEVEL BREACHED';
-      body = 'Current price ' + fmtUSD(currentPrice) + ' has breached your invalidation point of ' + fmtUSD(invalidation) + '. Your original thesis condition has been broken — review whether your reason for holding still stands.';
+      if (divReceived > 0 && effectivePrice > invalidation) {
+        alertClass = 'warning';
+        label = '⚠ PRICE BELOW INVALIDATION — DIVIDEND BUFFER ACTIVE';
+        body = 'Raw price ' + fmtUSD(currentPrice) + ' is below your invalidation level (' + fmtUSD(invalidation) + '), but your dividend income of ' + fmtUSD(divReceived) + '/share means your real adjusted loss is only ' + fmt(Math.abs(pctAway)) + '% from your effective break-even. Review whether your original thesis still stands.';
+      } else {
+        alertClass = 'danger';
+        label = '⛔ INVALIDATION LEVEL BREACHED';
+        body = 'Current price ' + fmtUSD(currentPrice) + ' has breached your invalidation point of ' + fmtUSD(invalidation) + divNote + '. Your original thesis condition has been broken — review whether your reason for holding still stands.';
+      }
     } else if (pctAway <= 3) {
       alertClass = 'warning';
       label = '⚠ APPROACHING INVALIDATION POINT';
-      body = 'Current price ' + fmtUSD(currentPrice) + ' is within ' + fmt(pctAway) + '% of your invalidation level (' + fmtUSD(invalidation) + '). Prepare your decision before price reaches that level.';
+      body = 'Dividend-adjusted position is within ' + fmt(pctAway) + '% of your invalidation level (' + fmtUSD(invalidation) + ')' + divNote + '. Prepare your decision before price reaches that level.';
     } else {
       alertClass = 'safe';
       label = 'Invalidation: ' + fmtUSD(invalidation);
-      body = fmt(pctAway) + '% above your invalidation point. Thesis intact. Why this matters: your invalidation point is the pre-defined condition under which your original reasoning no longer holds. It exists so price movement alone does not make your decision — your plan does.';
+      body = fmt(pctAway) + '% above your invalidation point (dividend-adjusted)' + (divReceived > 0 ? ' — raw price ' + fmt(pctAwayRaw) + '% away' : '') + '. Thesis intact. Why this matters: your invalidation point is the pre-defined condition under which your original reasoning no longer holds. It exists so price movement alone does not make your decision — your plan does.';
     }
 
     el.className = 'invalidation-alert ' + alertClass;
@@ -3501,6 +3539,26 @@ function renderPatienceTracker() {
       var target = parseFloat(thesis.target) || null;
       var pctToTarget = target && currentPrice ? ((target - currentPrice) / currentPrice * 100) : null;
       var pctGain = currentPrice ? ((currentPrice - buyTrade.price) / buyTrade.price * 100) : null;
+
+      // Calculate total dividends received for this position since entry
+      var sharesHeld = buyTrade.shares || 0;
+      var divReceived = 0;
+      if (sharesHeld > 0) {
+        trades.forEach(function(t) {
+          if (t.ticker === ticker && t.action === 'dividend' && t.date >= buyTrade.date) {
+            // Dividend per share = total received / shares held at time
+            var divShares = t.shares || sharesHeld;
+            var divPerShare = divShares > 0 ? (parseFloat(t.price) / divShares) : 0;
+            divReceived += divPerShare;
+          }
+        });
+      }
+      // Adjusted P&L adds dividend income back to the price return
+      var pctGainAdj = (currentPrice && sharesHeld > 0)
+        ? ((currentPrice - buyTrade.price + divReceived) / buyTrade.price * 100)
+        : pctGain;
+      var hasDivAdj = divReceived > 0;
+
       var cycleProgress = Math.min(100, Math.round((daysSince / plannedDays) * 100));
       var progressColor = cycleProgress < 50 ? 'var(--green)' : cycleProgress < 85 ? 'var(--amber)' : 'var(--red)';
 
@@ -3543,7 +3601,7 @@ function renderPatienceTracker() {
       cardsHTML += '<div class="patience-card">'
         + '<div class="patience-header">'
         + '<div><div class="patience-ticker">' + ticker + '</div><div style="font-size:11px;color:var(--text3);font-style:italic">Entry ' + fmtUSD(buyTrade.price) + ' on ' + buyTrade.date + '</div></div>'
-        + '<div style="text-align:right"><div class="patience-stat-val" style="font-size:16px;color:' + (pctGain>=0?'var(--green)':'var(--red)') + '">' + (pctGain!==null?(pctGain>=0?'+':'')+fmt(pctGain)+'%':'—') + '</div><div style="font-size:10px;color:var(--text3)">current P&L</div></div>'
+        + '<div style="text-align:right"><div class="patience-stat-val" style="font-size:16px;color:' + ((pctGainAdj!=null&&pctGainAdj>=0)?'var(--green)':'var(--red)') + '">' + (pctGainAdj!==null?(pctGainAdj>=0?'+':'')+fmt(pctGainAdj)+'%':'—') + '</div><div style="font-size:10px;color:var(--text3)">' + (hasDivAdj?'div-adjusted P&L':'current P&L') + '</div>' + (hasDivAdj?'<div style="font-size:9px;color:var(--text3);margin-top:1px">raw: '+(pctGain!==null?(pctGain>=0?'+':'')+fmt(pctGain)+'%':'—')+'</div>':'') + '</div>'
         + '</div>'
 
         // Day counter
