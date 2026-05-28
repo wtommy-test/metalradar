@@ -1455,6 +1455,7 @@ async function finnhubProfile(symbol) {
 async function refreshPortfolio() {
   const btn = document.getElementById('refresh-btn');
   btn.disabled = true; btn.innerHTML = '<span class="spin">⟳</span> LOADING';
+  try {
 
   // Fetch quotes in parallel (fast, no candle dependency)
   const quoteResults = await Promise.allSettled([
@@ -1527,7 +1528,11 @@ async function refreshPortfolio() {
   updateMacroBTC();
   PORTFOLIO_ASSETS.forEach(a => updateCard(a));
   document.getElementById('last-update').textContent = 'Updated '+new Date().toLocaleTimeString();
-  btn.disabled=false; btn.innerHTML='⟳ REFRESH';
+  } catch(refreshErr) {
+    console.error('refreshPortfolio error:', refreshErr);
+  } finally {
+    btn.disabled=false; btn.innerHTML='⟳ REFRESH';
+  }
   checkTargetsOnRefresh();
   // Priority 4 — Fetch silver spot in background after portfolio loads
   // Only re-fetch silver if cache is stale or empty
@@ -2185,11 +2190,12 @@ function saveSettings() {
 }
 
 function clearCacheAndRefresh() {
+  // Clear timestamps so refreshPortfolio knows to fetch fresh
+  // Keep in-memory data so cards can render stale while fetching
   candleTimestamps = {};
   silverTimestamp = 0;
   srCandleTimestamps = {};
-  candleData = {};
-  silverSpotData = null;
+  // Clear localStorage cache so next load also fetches fresh
   localStorage.removeItem('wt_candle_cache');
   // Close settings if open
   var overlay = document.getElementById('settings-overlay');
