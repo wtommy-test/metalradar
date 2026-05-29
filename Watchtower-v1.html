@@ -1223,6 +1223,7 @@ function renderSilverSpotPanel(containerId, loadError) {
   const upDown = changePct >= 0 ? 'up' : 'down';
   const changeColor = changePct >= 0 ? 'var(--green)' : 'var(--red)';
   const arrow = changePct >= 0 ? '▲' : '▼';
+  // Note: SLV ETF trades at ~90% of spot silver price per oz — this is ETF price, not spot
   // Contextual note based on direction
   let note = '';
   if (changePct <= -2) note = 'Silver falling — headwind for KSLV cycle recovery.';
@@ -1236,6 +1237,7 @@ function renderSilverSpotPanel(containerId, loadError) {
       <div class="silver-spot-icon">⬡</div>
       <div class="silver-spot-detail">
         <div class="silver-spot-label">Silver Proxy (${source}) — macro confirmation</div>
+        <div style="font-size:9px;color:var(--text3);font-style:italic">ETF price — spot silver trades ~10% higher per oz</div>
         <div style="display:flex;align-items:baseline;gap:10px">
           <div class="silver-spot-price">${fmtUSD(price)}</div>
           <div class="silver-spot-change ${upDown}" style="color:${changeColor}">${arrow} ${Math.abs(changePct).toFixed(2)}%</div>
