@@ -833,6 +833,7 @@ body::before {
         </div>
         <div id="wnt-body">
           <div class="wnt-subtitle">Check any condition that applies right now. If flags appear, consider waiting.</div>
+          <div style="font-family:var(--serif);font-style:italic;font-size:11px;color:var(--text3);border-left:2px solid var(--gold);padding-left:10px;margin:10px 0;line-height:1.6">Observe repeating behavior until evidence suggests the behavior is changing. When it changes — act on what is, not on what was.</div>
           <div class="wnt-grid" id="wnt-grid">
             <!-- injected by JS -->
           </div>
@@ -1633,6 +1634,7 @@ function buildDivBanner(a) {
         ${a.estDividend?`<span style="color:var(--green)">~$${a.estDividend.toFixed(2)}/share</span>`:''}
         <span style="color:var(--text3)">paid ${a.lastPayDate||a.lastExDiv}</span>
         <span style="color:var(--text3);margin-left:4px">· Next ex-div: ${a.exDiv} (${daysToNext}d)</span>
+        <div style="width:100%;margin-top:5px;padding-top:5px;border-top:1px solid rgba(74,222,128,0.15);font-size:9px;color:var(--text3);font-style:italic;font-family:var(--serif);letter-spacing:0;line-height:1.55">⚠ Tax note: If this distribution includes Return of Capital (ROC), it is not taxable income now — it reduces your cost basis instead, increasing your taxable gain at sale. Verify the monthly 19a-1 notice for ROC percentage. Consult a tax advisor.</div>
       </div>`;
     }
   }
@@ -2659,6 +2661,7 @@ function buildPositionRiskPanel(ticker, quote, naturalCycles, hasDivs) {
     + '</div>'
     + flagsHTML
     + '<div class="survivor-quote"><em>Compounding only works if you stay solvent and emotionally stable long enough to continue participating.</em></div>'
+    + '<div class="survivor-quote" style="margin-top:8px"><em>Observe repeating behavior until evidence suggests the behavior is changing. When it changes — act on what is, not on what was.</em></div>'
     + '</div>';
 }
 
@@ -3236,7 +3239,7 @@ function buildKnownCardHTML(a){
   var platforms=a.platforms.map(function(p){return "<span class=\"platform-badge\">"+p+"</span>";}).join("");
   var extra="";
   if(a.type==="metals-etf"){extra+=buildDivBanner(a);}
-  if(a.type==="metals-etf"){extra+='<div class="roc-note"><span style="color:var(--orange)">◆</span><span>Distribution may include <span style="color:var(--orange)">Return of Capital (ROC)</span> — verify before sizing.</span></div>';}
+  if(a.type==="metals-etf"){extra+='<div class="roc-note"><span style="color:var(--orange)">◆</span><span>Distribution may include <span style="color:var(--orange)">Return of Capital (ROC)</span> — verify before sizing. <span style="color:var(--text3)">ROC is not taxable income when received — it reduces your cost basis instead, increasing your taxable gain when you eventually sell. The tax bill is deferred, not eliminated. Verify the 19a-1 notice for the exact ROC percentage each month. Consult a tax advisor.</span></span></div>';}
   // Priority 3 — Post-Ex-Div Day Counter placeholder (for all dividend ETFs)
   if(a.exDiv){extra+='<div id="exdiv-counter-'+a.ticker+'"></div>';}
   // Priority 4 — Silver Spot placeholder (KSLV only)
